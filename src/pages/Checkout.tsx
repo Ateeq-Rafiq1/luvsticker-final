@@ -49,7 +49,7 @@ const Checkout = () => {
           quantity: orderData.quantity,
           custom_width: orderData.customWidth,
           custom_height: orderData.customHeight,
-          total_amount: 99.99, // Calculate based on actual pricing
+          total_amount: 99.99,
           status: 'pending'
         })
         .select()
