@@ -10,6 +10,7 @@ import { Upload, ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { toast } from "@/hooks/use-toast";
+
 const ProductDetail = () => {
   const {
     id
@@ -22,6 +23,7 @@ const ProductDetail = () => {
   const [artwork, setArtwork] = useState<File | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [mainImage, setMainImage] = useState<string>("");
+
   const {
     data: product,
     isLoading
@@ -37,17 +39,20 @@ const ProductDetail = () => {
           quantity_tiers (*)
         `).eq('id', id).single();
       if (data) {
-        const initialImage = data.feature_image_url || data.product_images?.find((img: any) => img.image_type === 'gallery')?.image_url;
-        setMainImage(initialImage || '');
+        const initialImage = data.feature_image_url || 
+          data.product_images?.find((img: any) => img.image_type === 'gallery')?.image_url;
+        setMainImage(String(initialImage || ''));
       }
       return data;
     },
     enabled: !!id
   });
+
   const handleQuantityChange = (change: number) => {
     const newQuantity = Math.max(50, quantity + change);
     setQuantity(newQuantity);
   };
+
   const handleFileUpload = async (file: File) => {
     if (file.size > 50 * 1024 * 1024) {
       // 50MB limit
@@ -64,12 +69,14 @@ const ProductDetail = () => {
       description: `${file.name} has been selected`
     });
   };
+
   const calculateTotal = () => {
     const selectedSizeData = product?.product_sizes?.find(s => String(s.id) === String(selectedSize));
     if (!selectedSizeData) return 0;
     const basePrice = parseFloat(selectedSizeData.price_per_unit || '0');
     return parseFloat((basePrice * quantity).toFixed(2));
   };
+
   const handleStartOrder = () => {
     if (!selectedSize) {
       toast({
@@ -78,6 +85,7 @@ const ProductDetail = () => {
       });
       return;
     }
+
     if (!artwork) {
       toast({
         title: "Please upload your artwork",
@@ -85,6 +93,7 @@ const ProductDetail = () => {
       });
       return;
     }
+
     const orderData = {
       productId: id,
       sizeId: selectedSize,
@@ -93,7 +102,9 @@ const ProductDetail = () => {
       customHeight: customHeight ? parseFloat(customHeight) : null,
       total: calculateTotal()
     };
+
     sessionStorage.setItem('orderData', JSON.stringify(orderData));
+
     const reader = new FileReader();
     reader.onload = () => {
       sessionStorage.setItem('orderArtwork', reader.result as string);
@@ -102,6 +113,7 @@ const ProductDetail = () => {
     };
     reader.readAsDataURL(artwork);
   };
+
   const nextStep = () => {
     if (currentStep === 1 && !selectedSize) {
       toast({
@@ -110,6 +122,7 @@ const ProductDetail = () => {
       });
       return;
     }
+
     if (currentStep === 3 && !artwork) {
       toast({
         title: "Please upload your artwork",
@@ -117,11 +130,14 @@ const ProductDetail = () => {
       });
       return;
     }
+
     setCurrentStep(prev => Math.min(prev + 1, 4));
   };
+
   const prevStep = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
+
   if (isLoading) {
     return <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -140,6 +156,7 @@ const ProductDetail = () => {
         <Footer />
       </div>;
   }
+
   if (!product) {
     return <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -149,15 +166,18 @@ const ProductDetail = () => {
         <Footer />
       </div>;
   }
+
   const selectedSizeData = product?.product_sizes?.find(s => String(s.id) === selectedSize);
   const isCustomSize = selectedSizeData?.is_custom;
   const galleryImages = product?.product_images?.filter((img: any) => img.image_type === 'gallery') || [];
+
   const stepTitles = {
     1: "Choose Size",
-    2: "Select Quantity",
+    2: "Select Quantity", 
     3: "Upload Artwork",
     4: "Complete Order"
   };
+
   return <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -357,4 +377,5 @@ const ProductDetail = () => {
       <Footer />
     </div>;
 };
+
 export default ProductDetail;
