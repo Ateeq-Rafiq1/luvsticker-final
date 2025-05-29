@@ -47,7 +47,7 @@ const AboutUs = () => {
                 <div className="bg-gray-200 h-96 w-full rounded-lg overflow-hidden">
                   <img src="/story.jpg" alt="Luvstickers Founding Team" className="w-full h-full object-cover" />
                 </div>
-                <div className="absolute -bottom-6 -left-6 bg-istickers-orange text-white py-4 px-8 rounded shadow-lg">
+                <div className="absolute -bottom-6 -left-6 bg-istickers-orange text-white py-4 px-8 rounded shadow-lg bg-orange-500">
                   <p className="font-bold">Est. 2015</p>
                 </div>
               </div>
