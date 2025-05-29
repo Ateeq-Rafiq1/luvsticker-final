@@ -70,7 +70,7 @@ const ProductDetail = () => {
   };
 
   const calculateTotal = () => {
-    const selectedSizeData = product?.product_sizes?.find(s => s.id === selectedSize);
+    const selectedSizeData = product?.product_sizes?.find(s => String(s.id) === selectedSize);
     if (!selectedSizeData) return 0;
     
     const basePrice = parseFloat(selectedSizeData.price_per_unit || '0');
@@ -169,9 +169,9 @@ const ProductDetail = () => {
     );
   }
 
-  const selectedSizeData = product.product_sizes?.find(s => s.id === selectedSize);
+  const selectedSizeData = product?.product_sizes?.find(s => String(s.id) === selectedSize);
   const isCustomSize = selectedSizeData?.is_custom;
-  const galleryImages = product.product_images?.filter((img: any) => img.image_type === 'gallery') || [];
+  const galleryImages = product?.product_images?.filter((img: any) => img.image_type === 'gallery') || [];
 
   const stepTitles = {
     1: "Choose Size",
@@ -192,7 +192,7 @@ const ProductDetail = () => {
               {mainImage ? (
                 <img
                   src={mainImage}
-                  alt={product.name}
+                  alt={product?.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -208,7 +208,7 @@ const ProductDetail = () => {
             {/* Gallery Thumbnails */}
             {galleryImages.length > 0 && (
               <div className="flex gap-3 overflow-x-auto pb-2">
-                {product.feature_image_url && (
+                {product?.feature_image_url && (
                   <button
                     onClick={() => setMainImage(product.feature_image_url || '')}
                     className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
@@ -245,8 +245,8 @@ const ProductDetail = () => {
           <div className="space-y-8">
             {/* Product Info */}
             <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">{product.name}</h1>
-              <p className="text-gray-600 text-lg leading-relaxed">{product.description}</p>
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">{product?.name}</h1>
+              <p className="text-gray-600 text-lg leading-relaxed">{product?.description}</p>
             </div>
 
             {/* Enhanced Step Progress Indicator */}
@@ -281,16 +281,16 @@ const ProductDetail = () => {
                 {currentStep === 1 && (
                   <div className="space-y-6">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {product.product_sizes?.map((size) => (
+                      {product?.product_sizes?.map((size) => (
                         <Button
                           key={size.id}
-                          variant={selectedSize === size.id ? "default" : "outline"}
+                          variant={selectedSize === String(size.id) ? "default" : "outline"}
                           className={`p-4 h-auto border-2 transition-all duration-200 ${
-                            selectedSize === size.id 
+                            selectedSize === String(size.id)
                               ? 'bg-orange-600 hover:bg-orange-700 border-orange-600 shadow-lg transform scale-105' 
                               : 'border-gray-200 hover:border-orange-300 hover:shadow-md'
                           }`}
-                          onClick={() => setSelectedSize(size.id)}
+                          onClick={() => setSelectedSize(String(size.id))}
                         >
                           <div className="text-center">
                             <div className="font-semibold">{size.size_name}</div>
@@ -448,7 +448,7 @@ const ProductDetail = () => {
                     <div className="bg-gray-50 rounded-lg p-6 space-y-4">
                       <div className="flex justify-between items-center py-2 border-b border-gray-200">
                         <span className="font-medium">Product:</span>
-                        <span className="text-right">{product.name}</span>
+                        <span className="text-right">{product?.name}</span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-gray-200">
                         <span className="font-medium">Size:</span>
