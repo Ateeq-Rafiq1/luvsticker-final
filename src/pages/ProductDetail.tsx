@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -358,8 +357,8 @@ const ProductDetail = () => {
                         <div className="text-center">
                           <Input
                             type="number"
-                            value={quantity}
-                            onChange={(e) => setQuantity(Math.max(50, parseInt(e.target.value) || 0))}
+                            value={quantity.toString()}
+                            onChange={(e) => setQuantity(Math.max(50, parseInt(e.target.value) || 50))}
                             className="text-center text-xl font-bold w-32 h-12"
                             min="50"
                           />
