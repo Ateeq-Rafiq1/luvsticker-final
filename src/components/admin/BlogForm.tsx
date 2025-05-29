@@ -6,13 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { X } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { TagInput } from "@/components/ui/tag-input";
+import RichTextEditor from "./RichTextEditor";
 
 interface BlogFormData {
   title: string;
@@ -32,6 +32,8 @@ interface BlogFormProps {
 const BlogForm = ({ onClose, blog }: BlogFormProps) => {
   const queryClient = useQueryClient();
   const [metaTags, setMetaTags] = useState<string[]>(blog?.meta_tags || []);
+  const [content, setContent] = useState(blog?.content || "");
+  const [excerpt, setExcerpt] = useState(blog?.excerpt || "");
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<BlogFormData>({
     defaultValues: {
@@ -47,9 +49,11 @@ const BlogForm = ({ onClose, blog }: BlogFormProps) => {
 
   const createBlogMutation = useMutation({
     mutationFn: async (data: BlogFormData) => {
-      // Include meta tags in blog data
+      // Include meta tags and content in blog data
       const blogData = {
         ...data,
+        content,
+        excerpt,
         meta_tags: metaTags,
         published_at: data.is_published ? new Date().toISOString() : null
       };
@@ -80,9 +84,11 @@ const BlogForm = ({ onClose, blog }: BlogFormProps) => {
 
   const updateBlogMutation = useMutation({
     mutationFn: async (data: BlogFormData) => {
-      // Include meta tags in blog data
+      // Include meta tags and content in blog data
       const blogData = {
         ...data,
+        content,
+        excerpt,
         meta_tags: metaTags,
         published_at: data.is_published && !blog.published_at ? new Date().toISOString() : blog.published_at
       };
@@ -139,66 +145,60 @@ const BlogForm = ({ onClose, blog }: BlogFormProps) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Card className="w-full max-w-6xl max-h-[95vh] overflow-y-auto">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>{blog ? 'Edit Blog Post' : 'Add Blog Post'}</CardTitle>
+            <CardTitle className="text-2xl">{blog ? 'Edit Blog Post' : 'Add Blog Post'}</CardTitle>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="w-4 h-4" />
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="title">Title *</Label>
-                  <Input
-                    id="title"
-                    {...register("title", { required: "Title is required" })}
-                    onChange={handleTitleChange}
-                    className="mt-1"
-                  />
-                  {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            <div className="grid lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="title" className="text-base font-semibold">Title *</Label>
+                    <Input
+                      id="title"
+                      {...register("title", { required: "Title is required" })}
+                      onChange={handleTitleChange}
+                      className="mt-2"
+                    />
+                    {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="slug" className="text-base font-semibold">Slug *</Label>
+                    <Input
+                      id="slug"
+                      {...register("slug", { required: "Slug is required" })}
+                      placeholder="url-friendly-version-of-title"
+                      className="mt-2"
+                    />
+                    {errors.slug && <p className="text-red-500 text-sm mt-1">{errors.slug.message}</p>}
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="slug">Slug *</Label>
-                  <Input
-                    id="slug"
-                    {...register("slug", { required: "Slug is required" })}
-                    placeholder="url-friendly-version-of-title"
-                    className="mt-1"
+                  <Label className="text-base font-semibold">Excerpt</Label>
+                  <RichTextEditor
+                    value={excerpt}
+                    onChange={setExcerpt}
+                    placeholder="Write a brief description of the blog post..."
                   />
-                  {errors.slug && <p className="text-red-500 text-sm">{errors.slug.message}</p>}
                 </div>
 
                 <div>
-                  <Label htmlFor="excerpt">Excerpt</Label>
-                  <Textarea
-                    id="excerpt"
-                    {...register("excerpt")}
-                    placeholder="Brief description of the blog post"
-                    rows={3}
-                    className="mt-1"
+                  <Label className="text-base font-semibold">Content *</Label>
+                  <RichTextEditor
+                    value={content}
+                    onChange={setContent}
+                    placeholder="Write your blog content here. Use the formatting buttons above to add headings, bold text, and more..."
                   />
-                </div>
-
-                <TagInput
-                  label="Meta Tags"
-                  tags={metaTags}
-                  onTagsChange={setMetaTags}
-                  placeholder="Add SEO meta tags"
-                />
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is_published"
-                    checked={watch("is_published")}
-                    onCheckedChange={(checked) => setValue("is_published", checked)}
-                  />
-                  <Label htmlFor="is_published">Publish immediately</Label>
+                  {!content && <p className="text-red-500 text-sm mt-1">Content is required</p>}
                 </div>
               </div>
               
@@ -212,27 +212,31 @@ const BlogForm = ({ onClose, blog }: BlogFormProps) => {
                   onImageRemoved={() => setValue('cover_image_url', '')}
                 />
 
-                <div>
-                  <Label htmlFor="content">Content *</Label>
-                  <Textarea
-                    id="content"
-                    {...register("content", { required: "Content is required" })}
-                    placeholder="Write your blog content here (HTML supported)"
-                    rows={10}
-                    className="mt-1 font-mono"
+                <TagInput
+                  label="Meta Tags"
+                  tags={metaTags}
+                  onTagsChange={setMetaTags}
+                  placeholder="Add SEO meta tags"
+                />
+
+                <div className="flex items-center space-x-3">
+                  <Switch
+                    id="is_published"
+                    checked={watch("is_published")}
+                    onCheckedChange={(checked) => setValue("is_published", checked)}
                   />
-                  {errors.content && <p className="text-red-500 text-sm">{errors.content.message}</p>}
+                  <Label htmlFor="is_published" className="font-semibold">Publish immediately</Label>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end space-x-2 pt-4 border-t">
+            <div className="flex justify-end space-x-3 pt-6 border-t">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
               <Button 
                 type="submit" 
-                disabled={createBlogMutation.isPending || updateBlogMutation.isPending}
+                disabled={createBlogMutation.isPending || updateBlogMutation.isPending || !content}
                 className="bg-orange-600 hover:bg-orange-700"
               >
                 {createBlogMutation.isPending || updateBlogMutation.isPending 

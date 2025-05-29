@@ -5,8 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Calendar, Clock, ArrowLeft, ArrowRight } from "lucide-react";
+import { Calendar, Clock, ArrowLeft, ArrowRight, Share2, Facebook, Twitter, Linkedin, Copy } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const BlogDetail = () => {
   const { slug } = useParams();
@@ -41,6 +43,34 @@ const BlogDetail = () => {
     },
     enabled: !!blog?.id
   });
+
+  const shareUrl = window.location.href;
+  const shareTitle = blog?.title || '';
+
+  const handleShare = async (platform: string) => {
+    const url = encodeURIComponent(shareUrl);
+    const text = encodeURIComponent(shareTitle);
+    
+    switch (platform) {
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+        break;
+      case 'twitter':
+        window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+        break;
+      case 'linkedin':
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+        break;
+      case 'copy':
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          toast({ title: "Link copied to clipboard!" });
+        } catch (err) {
+          toast({ title: "Failed to copy link", variant: "destructive" });
+        }
+        break;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -103,15 +133,15 @@ const BlogDetail = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <Navbar />
       
       {/* Back to Blog Button */}
-      <div className="bg-white border-b">
+      <div className="bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link 
             to="/blog" 
-            className="inline-flex items-center text-gray-600 hover:text-orange-600 transition-colors"
+            className="inline-flex items-center text-gray-600 hover:text-orange-600 transition-colors font-medium"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Blog
@@ -123,31 +153,31 @@ const BlogDetail = () => {
         {/* Hero Section with Cover Image */}
         {blog.cover_image_url && (
           <div className="relative">
-            <div className="w-full h-[50vh] md:h-[60vh] relative">
+            <div className="w-full h-[50vh] md:h-[65vh] relative">
               <img
                 src={blog.cover_image_url}
                 alt={blog.title}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
             </div>
             
             {/* Overlaid Content */}
             <div className="absolute bottom-0 left-0 right-0">
-              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
                 <div className="text-white">
-                  <div className="flex items-center text-sm text-gray-200 mb-4">
+                  <div className="flex items-center text-sm text-gray-200 mb-6">
                     <Calendar className="w-4 h-4 mr-2" />
                     {formatDate(blog.published_at)}
                     <span className="mx-3">•</span>
                     <Clock className="w-4 h-4 mr-2" />
                     {getReadingTime(blog.content)} min read
                   </div>
-                  <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-4">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6 text-shadow-lg">
                     {blog.title}
                   </h1>
                   {blog.excerpt && (
-                    <p className="text-lg md:text-xl text-gray-200 max-w-3xl">
+                    <p className="text-xl md:text-2xl text-gray-100 max-w-4xl leading-relaxed">
                       {blog.excerpt}
                     </p>
                   )}
@@ -159,58 +189,102 @@ const BlogDetail = () => {
         
         {/* Content Section */}
         <div className="bg-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             {/* Header for posts without cover image */}
             {!blog.cover_image_url && (
-              <header className="mb-12 text-center">
-                <div className="flex items-center justify-center text-sm text-gray-500 mb-6">
+              <header className="mb-16 text-center">
+                <div className="flex items-center justify-center text-sm text-gray-500 mb-8">
                   <Calendar className="w-4 h-4 mr-2" />
                   {formatDate(blog.published_at)}
                   <span className="mx-3">•</span>
                   <Clock className="w-4 h-4 mr-2" />
                   {getReadingTime(blog.content)} min read
                 </div>
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 leading-tight mb-8">
                   {blog.title}
                 </h1>
                 {blog.excerpt && (
-                  <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                  <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
                     {blog.excerpt}
                   </p>
                 )}
-                <div className="w-24 h-1 bg-orange-600 mx-auto mt-8"></div>
+                <div className="w-32 h-1 bg-gradient-to-r from-orange-500 to-orange-600 mx-auto mt-10 rounded-full"></div>
               </header>
             )}
             
+            {/* Share Section */}
+            <div className="flex items-center justify-between border-b border-gray-200 pb-8 mb-12">
+              <div className="text-sm text-gray-500">
+                Share this article
+              </div>
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleShare('facebook')}
+                  className="hover:bg-blue-50 hover:border-blue-200"
+                >
+                  <Facebook className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleShare('twitter')}
+                  className="hover:bg-blue-50 hover:border-blue-200"
+                >
+                  <Twitter className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleShare('linkedin')}
+                  className="hover:bg-blue-50 hover:border-blue-200"
+                >
+                  <Linkedin className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleShare('copy')}
+                  className="hover:bg-gray-50 hover:border-gray-300"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            
             {/* Article Content */}
             <article 
-              className="prose prose-lg prose-gray max-w-none 
-                         prose-headings:text-gray-900 prose-headings:font-bold
-                         prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl
-                         prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-6
-                         prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium
-                         prose-strong:text-gray-900 prose-strong:font-semibold
-                         prose-ul:text-gray-700 prose-ol:text-gray-700
-                         prose-li:mb-2 prose-li:leading-relaxed
-                         prose-blockquote:border-l-4 prose-blockquote:border-orange-600 
-                         prose-blockquote:pl-6 prose-blockquote:italic prose-blockquote:text-gray-600
-                         prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded
-                         prose-pre:bg-gray-900 prose-pre:text-gray-100
-                         prose-img:rounded-lg prose-img:shadow-lg"
+              className="prose prose-xl prose-gray max-w-none 
+                         prose-headings:text-gray-900 prose-headings:font-black prose-headings:tracking-tight
+                         prose-h1:text-4xl prose-h1:mb-8 prose-h1:mt-12 prose-h1:text-orange-900
+                         prose-h2:text-3xl prose-h2:mb-6 prose-h2:mt-10 prose-h2:text-gray-800 prose-h2:border-b prose-h2:border-orange-100 prose-h2:pb-3
+                         prose-h3:text-2xl prose-h3:mb-4 prose-h3:mt-8 prose-h3:text-gray-800
+                         prose-h4:text-xl prose-h4:mb-3 prose-h4:mt-6 prose-h4:text-gray-700
+                         prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-8 prose-p:text-lg prose-p:font-medium
+                         prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-semibold prose-a:decoration-2 prose-a:underline-offset-2
+                         prose-strong:text-gray-900 prose-strong:font-bold
+                         prose-ul:text-gray-700 prose-ol:text-gray-700 prose-ul:text-lg prose-ol:text-lg
+                         prose-li:mb-3 prose-li:leading-relaxed prose-li:font-medium
+                         prose-blockquote:border-l-4 prose-blockquote:border-orange-500 
+                         prose-blockquote:pl-8 prose-blockquote:italic prose-blockquote:text-gray-600 prose-blockquote:bg-orange-50 prose-blockquote:py-4 prose-blockquote:rounded-r-lg
+                         prose-code:bg-orange-100 prose-code:px-3 prose-code:py-1 prose-code:rounded prose-code:text-orange-800 prose-code:font-semibold
+                         prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:p-6
+                         prose-img:rounded-xl prose-img:shadow-2xl prose-img:border prose-img:border-gray-200"
               dangerouslySetInnerHTML={{ __html: blog.content }}
             />
             
             {/* Tags */}
             {blog.meta_tags && blog.meta_tags.length > 0 && (
-              <div className="mt-12 pt-8 border-t border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900 mb-4">Tags</h3>
-                <div className="flex flex-wrap gap-2">
+              <div className="mt-16 pt-8 border-t border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-6">Tags</h3>
+                <div className="flex flex-wrap gap-3">
                   {blog.meta_tags.map((tag: string, index: number) => (
                     <span 
                       key={index} 
-                      className="bg-orange-100 text-orange-800 px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-200 transition-colors"
+                      className="bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 px-6 py-3 rounded-full text-sm font-semibold hover:from-orange-200 hover:to-orange-300 transition-all duration-200 shadow-sm"
                     >
-                      {tag}
+                      #{tag}
                     </span>
                   ))}
                 </div>
