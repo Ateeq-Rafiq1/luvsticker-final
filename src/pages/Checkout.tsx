@@ -1,312 +1,245 @@
-
-import { Helmet } from "react-helmet-async";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "@/components/ui/use-toast";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-// Define cart item type
-interface CartItem {
-  name: string;
-  size: string;
-  quantity: number;
-  price: number;
-}
-
-const checkoutSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  address: z.string().min(1, "Address is required"),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  zipCode: z.string().min(1, "ZIP code is required"),
-  country: z.string().min(1, "Country is required"),
-});
-
-type CheckoutFormValues = z.infer<typeof checkoutSchema>;
-
-export default function Checkout() {
+const Checkout = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [orderData, setOrderData] = useState<any>(null);
+  const [artworkPreview, setArtworkPreview] = useState<string>("");
+  const [artworkName, setArtworkName] = useState<string>("");
 
-  const form = useForm<CheckoutFormValues>({
-    resolver: zodResolver(checkoutSchema),
-    defaultValues: {
-      email: "",
-      firstName: "",
-      lastName: "",
-      address: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      country: "United States",
-    },
-  });
+  useEffect(() => {
+    const storedOrderData = sessionStorage.getItem('orderData');
+    const storedArtwork = sessionStorage.getItem('orderArtwork');
+    const storedArtworkName = sessionStorage.getItem('orderArtworkName');
+    
+    if (!storedOrderData) {
+      navigate('/');
+      return;
+    }
+    
+    setOrderData(JSON.parse(storedOrderData));
+    if (storedArtwork) setArtworkPreview(storedArtwork);
+    if (storedArtworkName) setArtworkName(storedArtworkName);
+  }, [navigate]);
 
-  const onSubmit = async (data: CheckoutFormValues) => {
-    setLoading(true);
+  // Generate unique order number with timestamp and random component
+  const generateOrderNumber = () => {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `STK-${timestamp}-${random}`;
+  };
 
-    try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Generate tracking ID
-      const trackingId = `LUV${Date.now().toString().slice(-8)}`;
-
-      // Simulate sending confirmation email
-      console.log('Sending confirmation email to:', data.email);
-      console.log('Order details:', data);
-      console.log('Tracking ID:', trackingId);
-
+  const handleSubmitOrder = async () => {
+    if (!customerName || !customerEmail) {
       toast({
-        title: "Order placed successfully!",
-        description: `Your tracking ID is ${trackingId}. Check your email for confirmation.`,
+        title: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      // Generate unique order number
+      const orderNumber = generateOrderNumber();
+      
+      // Create order in database
+      const { data: order, error } = await supabase
+        .from('orders')
+        .insert({
+          customer_email: customerEmail,
+          customer_name: customerName,
+          product_id: orderData.productId,
+          size_id: orderData.sizeId,
+          quantity: orderData.quantity,
+          custom_width: orderData.customWidth,
+          custom_height: orderData.customHeight,
+          total_amount: parseFloat(orderData.total),
+          status: 'pending',
+          order_number: orderNumber // Use our generated order number
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Store order data for Stripe checkout
+      sessionStorage.setItem('pendingOrder', JSON.stringify({
+        orderId: order.id,
+        orderNumber: order.order_number,
+        customerEmail,
+        customerName,
+        total: orderData.total,
+        artworkName
+      }));
+
+      // Create Stripe checkout session
+      const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-payment', {
+        body: {
+          amount: Math.round(parseFloat(orderData.total) * 100), // Convert to cents
+          orderId: order.id,
+          orderNumber: order.order_number,
+          customerEmail,
+          customerName
+        }
       });
 
-      // Redirect to success page with tracking ID
-      navigate(`/order-success?tracking=${trackingId}&email=${encodeURIComponent(data.email)}`);
+      if (stripeError) throw stripeError;
+
+      // Redirect to Stripe checkout
+      if (stripeData?.url) {
+        window.location.href = stripeData.url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
 
     } catch (error) {
-      console.error("Checkout error:", error);
+      console.error('Error submitting order:', error);
       toast({
-        title: "Checkout failed",
-        description: "An error occurred during checkout. Please try again.",
-        variant: "destructive",
+        title: "Error submitting order",
+        description: "Please try again later",
+        variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  // Sample cart items
-  const cartItems: CartItem[] = [
-    { name: "Die Cut Stickers", size: "3\" x 3\"", quantity: 50, price: 24.99 },
-    { name: "Circle Stickers", size: "2\" diameter", quantity: 100, price: 29.99 },
-  ];
-  
-  const subtotal: number = cartItems.reduce((acc, item) => acc + item.price, 0);
-  const shipping: number = 0; // Free shipping
-  const total: number = subtotal + shipping;
-
-  return (
-    <>
-      <Helmet>
-        <title>Checkout - Luvstickers</title>
-      </Helmet>
-      <Header />
-      <main className="min-h-screen bg-gray-50 py-12">
-        <div className="container max-w-6xl mx-auto px-4">
-          <div className="flex items-center mb-8">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/cart" className="flex items-center text-gray-600">
-                <ArrowLeft size={16} className="mr-1" />
-                Back to Cart
-              </Link>
-            </Button>
-          </div>
-
-          <h1 className="text-3xl font-bold mb-8 text-center">Guest Checkout</h1>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Order Summary */}
-            <div className="md:col-span-1 order-2 md:order-1">
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h2 className="font-semibold text-lg mb-4">Order Summary</h2>
-                
-                {cartItems.map((item, index) => (
-                  <div key={index} className="flex justify-between py-2 border-b">
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-gray-500">Size: {item.size}</p>
-                      <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
-                    </div>
-                    <div className="font-medium">${item.price.toFixed(2)}</div>
-                  </div>
-                ))}
-                
-                <div className="mt-4 space-y-2">
-                  <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Shipping</span>
-                    <span>Free</span>
-                  </div>
-                  <Separator className="my-2" />
-                  <div className="flex justify-between font-bold">
-                    <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Checkout Form */}
-            <div className="md:col-span-2 order-1 md:order-2">
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <h2 className="font-semibold text-lg mb-4">Shipping & Contact Information</h2>
-                    
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email address *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="your@email.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>First name *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Last name *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Doe" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Address *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="123 Main St" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>City *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="New York" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="state"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>State *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="NY" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="zipCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>ZIP Code *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="10001" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="country"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Country *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <p className="text-sm text-blue-800">
-                        <strong>No account required!</strong> You'll receive an order confirmation email with a tracking ID to monitor your order status.
-                      </p>
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      className="w-full mt-6" 
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <div className="flex items-center">
-                          <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Processing Order...
-                        </div>
-                      ) : (
-                        `Complete Order - $${total.toFixed(2)}`
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-              </div>
-            </div>
+  if (!orderData) {
+    return <div className="min-h-screen">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">No order data found</h1>
+            <Button onClick={() => navigate('/')}>Return to Home</Button>
           </div>
         </div>
-      </main>
+        <Footer />
+      </div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Checkout</h1>
+          <p className="text-gray-600">Complete your order details below</p>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Customer Information */}
+          <Card className="shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 bg-orange-500">
+              <CardTitle className="text-xl text-orange-800">Customer Information</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 space-y-6">
+              <div>
+                <Label htmlFor="name" className="text-base font-medium">Full Name *</Label>
+                <Input 
+                  id="name" 
+                  value={customerName} 
+                  onChange={(e) => setCustomerName(e.target.value)} 
+                  placeholder="Enter your full name" 
+                  className="mt-2 h-12" 
+                />
+              </div>
+              <div>
+                <Label htmlFor="email" className="text-base font-medium">Email Address *</Label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={customerEmail} 
+                  onChange={(e) => setCustomerEmail(e.target.value)} 
+                  placeholder="Enter your email address" 
+                  className="mt-2 h-12" 
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Order confirmation and tracking info will be sent to this email
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Enhanced Order Summary */}
+          <Card className="shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100">
+              <CardTitle className="text-xl text-orange-800">Order Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 space-y-6">
+              <div className="space-y-4">
+                <div className="flex justify-between py-2">
+                  <span className="font-medium">Quantity:</span>
+                  <span>{orderData.quantity} pieces</span>
+                </div>
+                {orderData.customWidth && orderData.customHeight && (
+                  <div className="flex justify-between py-2">
+                    <span className="font-medium">Custom Size:</span>
+                    <span>{orderData.customWidth}" × {orderData.customHeight}"</span>
+                  </div>
+                )}
+                {artworkName && (
+                  <div className="py-2">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-medium">Artwork:</span>
+                      <span className="text-sm text-right max-w-48 truncate">{artworkName}</span>
+                    </div>
+                    {artworkPreview && (
+                      <div className="mt-2">
+                        <img 
+                          src={artworkPreview} 
+                          alt="Artwork preview" 
+                          className="w-full h-32 object-contain bg-gray-50 rounded-lg border" 
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              <Separator />
+              
+              <div className="bg-orange-50 rounded-lg p-4">
+                <div className="flex justify-between items-center text-xl font-bold text-orange-600">
+                  <span>Total Amount:</span>
+                  <span>${orderData.total}</span>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  Includes design processing and premium materials
+                </p>
+              </div>
+              
+              <Button 
+                className="w-full bg-orange-600 hover:bg-orange-700 h-14 text-lg font-semibold" 
+                onClick={handleSubmitOrder} 
+                disabled={isLoading}
+              >
+                {isLoading ? "Processing..." : "Proceed to Payment"}
+              </Button>
+              
+              <p className="text-xs text-gray-500 text-center">
+                By completing your order, you agree to our terms and conditions
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
       <Footer />
-    </>
+    </div>
   );
-}
+};
+
+export default Checkout;

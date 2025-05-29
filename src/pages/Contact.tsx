@@ -1,20 +1,11 @@
-
-import React, { useState } from "react";
-import { Helmet } from "react-helmet-async";
-import { Layout } from "@/components/layout/Layout";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { useState } from "react";
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
@@ -22,166 +13,121 @@ const Contact = () => {
     subject: "",
     message: ""
   });
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate form submission
-    setTimeout(() => {
-      toast({
-        title: "Message Sent",
-        description: "We've received your message and will get back to you shortly.",
-      });
-      setFormData({
-        name: "",
-        email: "",
-        subject: "",
-        message: ""
-      });
-      setIsSubmitting(false);
-    }, 1500);
+    // Handle form submission here
+    console.log("Form submitted:", formData);
+    // Reset form
+    setFormData({
+      name: "",
+      email: "",
+      subject: "",
+      message: ""
+    });
+    alert("Thank you for your message! We'll get back to you soon.");
   };
-  
-  return (
-    <>
-      <Helmet>
-        <title>Contact Us | Luvstickers</title>
-      </Helmet>
-      <Layout>
-        <div className="container mx-auto py-12 px-4">
-          <h1 className="text-3xl font-bold text-center mb-10">Contact Us</h1>
-          
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Contact Form */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Send us a message</CardTitle>
-                <CardDescription>
-                  Fill out this form and we'll get back to you as soon as possible.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Your Name</Label>
-                    <Input 
-                      id="name" 
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder="Your Name" 
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input 
-                      id="email" 
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="email@example.com" 
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="subject">Subject</Label>
-                    <Input 
-                      id="subject" 
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      placeholder="Order Inquiry" 
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea 
-                      id="message" 
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      placeholder="Tell us how we can help you..." 
-                      rows={5}
-                      required 
-                    />
-                  </div>
-                  
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Sending..." : "Send Message"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-            
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+  return <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <div className="flex-1 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center mb-12">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">Contact Us</h1>
+            <p className="text-gray-600 text-lg">
+              Get in touch with our team for any questions or support
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Contact Information */}
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Our Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg">Customer Support Hours</h3>
-                    <p className="text-gray-500">Monday - Friday: 9 AM - 6 PM (EST)</p>
-                    <p className="text-gray-500">Saturday: 10 AM - 4 PM (EST)</p>
-                    <p className="text-gray-500">Sunday: Closed</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-lg">Email</h3>
-                    <p className="text-gray-500">support@luvstickers.com</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-lg">Phone</h3>
-                    <p className="text-gray-500">(555) 123-4567</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-lg">Headquarters</h3>
-                    <address className="text-gray-500 not-italic">
-                      123 Sticker Lane<br />
-                      Design District<br />
-                      Craftville, CA 12345<br />
-                      United States
-                    </address>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Frequently Asked Questions</CardTitle>
+                  <CardTitle className="flex items-center">
+                    <Mail className="w-5 h-5 mr-2 text-orange-600" />
+                    Email Us
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="mb-4">
-                    Have a question? Check our FAQ page for quick answers to common questions.
+                  <p className="text-gray-600">support@luvstickers.com</p>
+                  
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Phone className="w-5 h-5 mr-2 text-orange-600" />
+                    Call Us
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">1-800-STICKERS</p>
+                  
+                </CardContent>
+              </Card>
+
+              
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Clock className="w-5 h-5 mr-2 text-orange-600" />
+                    Business Hours
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">
+                    Monday - Friday: 9AM - 6PM EST<br />
+                    Saturday: 10AM - 4PM EST<br />
+                    Sunday: Closed
                   </p>
-                  <Button variant="outline" asChild className="w-full">
-                    <a href="/faq">Visit FAQ Page</a>
-                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Contact Form */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Send us a Message</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="name">Name</Label>
+                        <Input id="name" name="name" value={formData.name} onChange={handleInputChange} required />
+                      </div>
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} required />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="subject">Subject</Label>
+                      <Input id="subject" name="subject" value={formData.subject} onChange={handleInputChange} required />
+                    </div>
+                    <div>
+                      <Label htmlFor="message">Message</Label>
+                      <textarea id="message" name="message" rows={6} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm" value={formData.message} onChange={handleInputChange} required />
+                    </div>
+                    <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700">
+                      Send Message
+                    </Button>
+                  </form>
                 </CardContent>
               </Card>
             </div>
           </div>
         </div>
-      </Layout>
-    </>
-  );
+      </div>
+      <Footer />
+    </div>;
 };
-
 export default Contact;

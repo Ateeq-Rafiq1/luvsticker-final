@@ -1,195 +1,172 @@
 
-import React from "react";
-import { Helmet } from "react-helmet-async";
-import { Layout } from "@/components/layout/Layout";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle, XCircle, Clock, RefreshCw } from "lucide-react";
 
 const Returns = () => {
   return (
-    <>
-      <Helmet>
-        <title>Returns Policy | Luvstickers</title>
-      </Helmet>
-      <Layout>
-        <div className="container mx-auto py-12 px-4">
-          <h1 className="text-3xl font-bold text-center mb-10">Returns Policy</h1>
-          
-          <div className="max-w-3xl mx-auto">
-            <section className="mb-8">
-              <p className="text-lg text-center mb-8">
-                We want you to be completely satisfied with your purchase. If you're not, 
-                we're here to help.
-              </p>
-              
-              <div className="bg-blue-50 border border-blue-100 rounded-lg p-6 mb-8">
-                <h2 className="text-xl font-semibold mb-2">30-Day Return Policy</h2>
-                <p>
-                  We offer a 30-day return policy for most products. If you're not completely 
-                  satisfied with your purchase, you can return it within 30 days of delivery for 
-                  a full refund of the product price.
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <div className="flex-1 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center mb-12">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">
+              Returns & Refunds
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Your satisfaction is our priority. Learn about our return policy.
+            </p>
+          </div>
+
+          <div className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <CheckCircle className="w-6 h-6 mr-2 text-green-600" />
+                  100% Satisfaction Guarantee
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  We stand behind the quality of our products. If you're not completely satisfied
+                  with your order, we'll make it right with a full refund or replacement.
                 </p>
-                <div className="mt-4">
-                  <Button asChild>
-                    <a href="/contact">Contact Support</a>
-                  </Button>
-                </div>
-              </div>
-            </section>
-            
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">Return Process</h2>
-              <ol className="space-y-4 list-decimal list-inside">
-                <li className="pl-2">
-                  <span className="font-medium">Contact our customer service team</span>
-                  <p className="ml-6 text-gray-600">
-                    Email us at returns@Luvstickers.com or use our contact form to request a return.
-                    Please include your order number and reason for return.
-                  </p>
-                </li>
-                <li className="pl-2">
-                  <span className="font-medium">Receive return authorization</span>
-                  <p className="ml-6 text-gray-600">
-                    We'll review your request and send you return instructions along with a return 
-                    authorization number within 1-2 business days.
-                  </p>
-                </li>
-                <li className="pl-2">
-                  <span className="font-medium">Package your return</span>
-                  <p className="ml-6 text-gray-600">
-                    Carefully package the unused items in their original packaging if possible.
-                    Include your return authorization number inside the package.
-                  </p>
-                </li>
-                <li className="pl-2">
-                  <span className="font-medium">Ship your return</span>
-                  <p className="ml-6 text-gray-600">
-                    Send your package to our returns department using a tracked shipping method.
-                    Return shipping costs are the responsibility of the customer unless the return
-                    is due to our error.
-                  </p>
-                </li>
-                <li className="pl-2">
-                  <span className="font-medium">Refund processing</span>
-                  <p className="ml-6 text-gray-600">
-                    Once we receive and inspect your return, we'll process your refund within 
-                    5-7 business days. Refunds will be issued to the original payment method.
-                  </p>
-                </li>
-              </ol>
-            </section>
-            
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">Return Conditions & Exceptions</h2>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="item-1">
-                  <AccordionTrigger>Custom-Designed Products</AccordionTrigger>
-                  <AccordionContent>
-                    Custom-designed stickers and products created to your specifications can only 
-                    be returned if there is a manufacturing defect. Design errors, spelling mistakes, 
-                    or color variations that match the digital proof sent to you prior to production 
-                    are not eligible for returns.
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="item-2">
-                  <AccordionTrigger>Product Condition Requirements</AccordionTrigger>
-                  <AccordionContent>
-                    All returned items must be unused and in their original condition. Stickers that 
-                    have been applied or partially applied cannot be returned. Products must be returned 
-                    with all original packaging and accessories.
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="item-3">
-                  <AccordionTrigger>Sale & Clearance Items</AccordionTrigger>
-                  <AccordionContent>
-                    Items purchased on clearance or marked as final sale are not eligible for returns 
-                    unless they arrive damaged or defective.
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="item-4">
-                  <AccordionTrigger>Defective or Damaged Products</AccordionTrigger>
-                  <AccordionContent>
-                    If you receive damaged or defective products, please contact us within 7 days of 
-                    receipt. We may request photos of the damaged items and packaging. Shipping costs 
-                    for returning defective items will be reimbursed.
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="item-5">
-                  <AccordionTrigger>Bulk Orders</AccordionTrigger>
-                  <AccordionContent>
-                    For bulk orders (over 100 units), special return conditions may apply. Please 
-                    contact our customer service team to discuss the specific circumstances of your return.
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </section>
-            
-            <section>
-              <h2 className="text-2xl font-semibold mb-4">Frequently Asked Questions</h2>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="item-1">
-                  <AccordionTrigger>How long does it take to process my refund?</AccordionTrigger>
-                  <AccordionContent>
-                    Once we receive your return, we'll inspect the items and process your refund within 
-                    5-7 business days. After processing, it may take an additional 3-5 business days for 
-                    the refund to appear in your account, depending on your payment provider.
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="item-2">
-                  <AccordionTrigger>Can I exchange an item instead of returning it?</AccordionTrigger>
-                  <AccordionContent>
-                    Yes, we offer exchanges for items of equal or greater value. If the exchange item costs 
-                    more, you'll need to pay the difference. Contact our support team to arrange an exchange.
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="item-3">
-                  <AccordionTrigger>Do I have to pay for return shipping?</AccordionTrigger>
-                  <AccordionContent>
-                    Customers are responsible for return shipping costs unless the return is due to our error 
-                    (such as sending the wrong item or a defective product). We recommend using a tracked 
-                    shipping method for all returns.
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="item-4">
-                  <AccordionTrigger>What if I received the wrong item?</AccordionTrigger>
-                  <AccordionContent>
-                    If you received an incorrect item, please contact us immediately. We'll arrange for the 
-                    return of the wrong item and send you the correct one as quickly as possible at no 
-                    additional cost to you.
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </section>
-            
-            <div className="mt-10 text-center">
-              <p className="mb-4">
-                Have questions about our return policy or need to start a return?
-              </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Button asChild variant="default">
-                  <a href="/contact">Contact Support</a>
-                </Button>
-                <Button asChild variant="outline">
-                  <a href="/faq">View FAQ</a>
-                </Button>
-              </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-green-600">
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    Eligible for Return
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-gray-600">
+                    <li>• Defective or damaged products</li>
+                    <li>• Wrong item received</li>
+                    <li>• Poor print quality</li>
+                    <li>• Missing items from order</li>
+                    <li>• Color discrepancies</li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-red-600">
+                    <XCircle className="w-5 h-5 mr-2" />
+                    Not Eligible for Return
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-gray-600">
+                    <li>• Custom orders (unless defective)</li>
+                    <li>• Items damaged by customer</li>
+                    <li>• Change of mind after approval</li>
+                    <li>• Orders over 90 days old</li>
+                    <li>• Used or applied stickers</li>
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Clock className="w-6 h-6 mr-2 text-orange-600" />
+                  Return Timeline
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <span className="text-orange-600 font-semibold text-sm">1</span>
+                    </div>
+                    <div className="ml-3">
+                      <h4 className="font-semibold">Contact Us (Within 30 Days)</h4>
+                      <p className="text-gray-600 text-sm">
+                        Report any issues within 30 days of receiving your order
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <span className="text-orange-600 font-semibold text-sm">2</span>
+                    </div>
+                    <div className="ml-3">
+                      <h4 className="font-semibold">Send Photos (If Applicable)</h4>
+                      <p className="text-gray-600 text-sm">
+                        For quality issues, send photos of the problem
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <span className="text-orange-600 font-semibold text-sm">3</span>
+                    </div>
+                    <div className="ml-3">
+                      <h4 className="font-semibold">Get Resolution (1-2 Business Days)</h4>
+                      <p className="text-gray-600 text-sm">
+                        We'll review and provide a solution quickly
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <RefreshCw className="w-6 h-6 mr-2 text-blue-600" />
+                  How to Request a Return
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-gray-600">
+                    To request a return or refund, please contact our customer service team:
+                  </p>
+                  <div className="bg-gray-100 p-4 rounded-lg">
+                    <p><strong>Email:</strong> returns@stickerstore.com</p>
+                    <p><strong>Phone:</strong> 1-800-STICKERS</p>
+                    <p><strong>Include:</strong> Order number, issue description, and photos (if applicable)</p>
+                  </div>
+                  <p className="text-gray-600">
+                    Our team will review your request and respond within 24 hours with next steps.
+                    Most issues can be resolved without returning the physical product.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-orange-50 border-orange-200">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <h3 className="font-semibold text-orange-800 mb-2">
+                    Questions About Returns?
+                  </h3>
+                  <p className="text-orange-700 mb-4">
+                    Our customer service team is here to help with any return questions.
+                  </p>
+                  <a
+                    href="/contact"
+                    className="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    Contact Support
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </Layout>
-    </>
+      </div>
+      <Footer />
+    </div>
   );
 };
 
