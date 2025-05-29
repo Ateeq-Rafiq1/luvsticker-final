@@ -4,14 +4,12 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
-
 const AboutUs = () => {
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       <Navbar />
       
       {/* Hero Section */}
-      <div className="bg-istickers-orange text-white py-16 md:py-24">
+      <div className="bg-istickers-orange text-white py-16 md:py-24 bg-[#ff7e00]">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">About Luvstickers</h1>
@@ -47,11 +45,7 @@ const AboutUs = () => {
               </div>
               <div className="relative">
                 <div className="bg-gray-200 h-96 w-full rounded-lg overflow-hidden">
-                  <img 
-                    src="/story.jpg" 
-                    alt="Luvstickers Founding Team" 
-                    className="w-full h-full object-cover"
-                  />
+                  <img src="/story.jpg" alt="Luvstickers Founding Team" className="w-full h-full object-cover" />
                 </div>
                 <div className="absolute -bottom-6 -left-6 bg-istickers-orange text-white py-4 px-8 rounded shadow-lg">
                   <p className="font-bold">Est. 2015</p>
@@ -154,9 +148,9 @@ const AboutUs = () => {
               <div className="bg-white p-8 rounded-xl shadow-lg text-center">
                 <div className="bg-istickers-orange/10 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-istickers-orange">
-                    <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>
-                    <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/>
-                    <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>
+                    <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+                    <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
+                    <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold mb-4">Premium Materials</h3>
@@ -169,8 +163,8 @@ const AboutUs = () => {
               <div className="bg-white p-8 rounded-xl shadow-lg text-center">
                 <div className="bg-istickers-orange/10 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-istickers-orange">
-                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-                    <path d="m9 12 2 2 4-4"/>
+                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                    <path d="m9 12 2 2 4-4" />
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold mb-4">Custom Design Support</h3>
@@ -183,8 +177,8 @@ const AboutUs = () => {
               <div className="bg-white p-8 rounded-xl shadow-lg text-center">
                 <div className="bg-istickers-orange/10 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-istickers-orange">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold mb-4">Fast Turnaround</h3>
@@ -201,14 +195,31 @@ const AboutUs = () => {
             <h2 className="text-3xl font-bold mb-12 text-center">Our Journey</h2>
             
             <div className="space-y-12 relative before:absolute before:inset-0 before:left-[19px] md:before:left-1/2 md:before:ml-[-1px] before:h-full before:w-0.5 before:bg-gray-200">
-              {[{ year: "2015", title: "Humble Beginnings", description: "Luvstickers was founded in Sarah's garage with a single cutting machine and a passion for quality stickers." },
-                { year: "2017", title: "First Office Space", description: "As demand grew, we moved into our first dedicated office and production space, expanding our team to 10 people." },
-                { year: "2019", title: "New Production Technology", description: "We invested in cutting-edge printing and cutting technology, allowing for more intricate designs and faster production." },
-                { year: "2021", title: "International Expansion", description: "We began shipping to international customers, reaching sticker enthusiasts around the globe." },
-                { year: "2023", title: "Sustainability Initiative", description: "We launched our eco-friendly materials option and committed to carbon-neutral shipping." },
-                { year: "Today", title: "Continuing to Grow", description: "We're constantly evolving, with new products and services to meet the needs of our creative customers." }
-              ].map((event, index) => (
-                <div key={index} className={`relative flex flex-col md:flex-row gap-8 items-center ${index % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
+              {[{
+              year: "2015",
+              title: "Humble Beginnings",
+              description: "Luvstickers was founded in Sarah's garage with a single cutting machine and a passion for quality stickers."
+            }, {
+              year: "2017",
+              title: "First Office Space",
+              description: "As demand grew, we moved into our first dedicated office and production space, expanding our team to 10 people."
+            }, {
+              year: "2019",
+              title: "New Production Technology",
+              description: "We invested in cutting-edge printing and cutting technology, allowing for more intricate designs and faster production."
+            }, {
+              year: "2021",
+              title: "International Expansion",
+              description: "We began shipping to international customers, reaching sticker enthusiasts around the globe."
+            }, {
+              year: "2023",
+              title: "Sustainability Initiative",
+              description: "We launched our eco-friendly materials option and committed to carbon-neutral shipping."
+            }, {
+              year: "Today",
+              title: "Continuing to Grow",
+              description: "We're constantly evolving, with new products and services to meet the needs of our creative customers."
+            }].map((event, index) => <div key={index} className={`relative flex flex-col md:flex-row gap-8 items-center ${index % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
                   <div className="flex-1 md:text-right">
                     <div className={`absolute left-0 md:left-1/2 mt-1.5 -ml-1.5 md:-ml-3.5 h-7 w-7 rounded-full border-4 border-istickers-orange bg-white z-10 ${index % 2 === 0 ? 'md:translate-x-0' : 'md:-translate-x-0'}`}></div>
                   </div>
@@ -221,8 +232,7 @@ const AboutUs = () => {
                       <p className="text-gray-700">{event.description}</p>
                     </div>
                   </div>
-                </div>
-              ))}
+                </div>)}
             </div>
           </section>
 
@@ -245,8 +255,6 @@ const AboutUs = () => {
       </div>
       
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default AboutUs;
