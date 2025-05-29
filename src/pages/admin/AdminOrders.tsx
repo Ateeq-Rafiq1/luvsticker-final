@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Package, Mail, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, Search, Package, Mail, Phone, MapPin, Download, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const AdminOrders = () => {
   const queryClient = useQueryClient();
@@ -89,6 +89,32 @@ const AdminOrders = () => {
       });
     }
   });
+
+  const downloadArtwork = async (artworkUrl: string, orderNumber: string) => {
+    try {
+      const response = await fetch(artworkUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `artwork-${orderNumber}.${blob.type.split('/')[1]}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Artwork downloaded successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error downloading artwork",
+        description: "Please try again later",
+        variant: "destructive"
+      });
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -219,7 +245,7 @@ const AdminOrders = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                     {/* Customer Information */}
                     <div className="space-y-3">
                       <h4 className="font-semibold text-gray-900 flex items-center">
@@ -255,6 +281,60 @@ const AdminOrders = () => {
                       </div>
                     </div>
 
+                    {/* Artwork Section */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-gray-900">Artwork</h4>
+                      <div className="space-y-2">
+                        {order.artwork_url ? (
+                          <div className="space-y-2">
+                            <div className="relative">
+                              <img 
+                                src={order.artwork_url} 
+                                alt="Order artwork" 
+                                className="w-full h-20 object-cover rounded-lg border bg-gray-50"
+                              />
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="absolute top-1 right-1 h-6 w-6 p-0"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-3xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Artwork Preview - Order #{order.order_number}</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="flex justify-center">
+                                    <img 
+                                      src={order.artwork_url} 
+                                      alt="Order artwork preview" 
+                                      className="max-w-full max-h-96 object-contain rounded-lg"
+                                    />
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => downloadArtwork(order.artwork_url!, order.order_number)}
+                              className="w-full text-xs"
+                            >
+                              <Download className="w-3 h-3 mr-1" />
+                              Download
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="text-center py-4 border-2 border-dashed border-gray-200 rounded-lg">
+                            <p className="text-xs text-gray-500">No artwork uploaded</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Order Details */}
                     <div className="space-y-3">
                       <h4 className="font-semibold text-gray-900">Order Details</h4>
@@ -268,19 +348,6 @@ const AdminOrders = () => {
                         <p className="text-sm">
                           <span className="font-medium">Updated:</span> {new Date(order.updated_at).toLocaleDateString()}
                         </p>
-                        {order.artwork_url && (
-                          <p className="text-sm">
-                            <span className="font-medium">Artwork:</span>{" "}
-                            <a 
-                              href={order.artwork_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-orange-600 hover:text-orange-700 underline"
-                            >
-                              View File
-                            </a>
-                          </p>
-                        )}
                       </div>
                     </div>
 
