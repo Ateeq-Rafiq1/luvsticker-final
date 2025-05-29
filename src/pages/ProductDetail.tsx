@@ -70,11 +70,11 @@ const ProductDetail = () => {
   };
 
   const calculateTotal = () => {
-    const selectedSizeData = product?.product_sizes?.find(s => String(s.id) === selectedSize);
+    const selectedSizeData = product?.product_sizes?.find(s => String(s.id) === String(selectedSize));
     if (!selectedSizeData) return 0;
     
     const basePrice = parseFloat(selectedSizeData.price_per_unit || '0');
-    return (basePrice * quantity).toFixed(2);
+    return parseFloat((basePrice * quantity).toFixed(2));
   };
 
   const handleStartOrder = () => {
