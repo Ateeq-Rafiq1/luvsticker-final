@@ -22,26 +22,65 @@ const ProductDetail = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [mainImage, setMainImage] = useState<string>("");
 
-  const { data: product, isLoading } = useQuery({
+  // --- START OF INTERFACES TO PASTE ---
+
+// Interface for product sizes fetched from Supabase
+interface ProductSize {
+  id: string; // Supabase IDs are often strings (UUIDs)
+  size_name: string;
+  width: number | null;
+  height: number | null;
+  // Crucial change: price_per_unit can be a number OR a string from Supabase
+  price_per_unit: number | string; 
+  is_custom: boolean;
+  product_id: string; // Add if it's part of the fetched product_sizes relation
+}
+
+// Interface for product images fetched from Supabase
+interface ProductImage {
+  id: string;
+  image_url: string;
+  image_type: 'feature' | 'gallery';
+  alt_text?: string;
+}
+
+// Main Product interface
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  base_price: number; // Assuming this is fetched as a number
+  is_active: boolean;
+  feature_image_url?: string;
+  // Use the defined interfaces for nested data
+  product_images: ProductImage[];
+  product_sizes: ProductSize[];
+  quantity_tiers: any[]; // Consider defining a proper interface for quantity_tiers too
+}
+
+// --- END OF INTERFACES TO PASTE ---
+
+   const {
+    data: product,
+    isLoading
+  } = useQuery<Product>({ // <--- IMPORTANT: Add <Product> here to use the interface
     queryKey: ['product', id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('products')
-        .select(`
-          *,
-          product_images (*),
-          product_sizes (*),
-          quantity_tiers (*)
-        `)
-        .eq('id', id)
-        .single();
-      
+      const {
+        data
+      } = await supabase.from('products').select(`
+        *,
+        product_images (*),
+        product_sizes (*),
+        quantity_tiers (*)
+      `).eq('id', id).single();
       if (data) {
         const initialImage = data.feature_image_url || 
           data.product_images?.find((img: any) => img.image_type === 'gallery')?.image_url;
         setMainImage(String(initialImage || ''));
       }
-      return data;
+      // Ensure data is cast to Product type if it aligns with the interface
+      return data as Product; 
     },
     enabled: !!id
   });
@@ -52,8 +91,7 @@ const ProductDetail = () => {
   };
 
   const handleFileUpload = async (file: File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      // 50MB limit
+    if (file.size > 50 * 1024 * 1024) { // 50MB limit
       toast({
         title: "File too large",
         description: "Please select a file smaller than 50MB",
@@ -71,7 +109,7 @@ const ProductDetail = () => {
   const calculateTotal = () => {
     const selectedSizeData = product?.product_sizes?.find(s => String(s.id) === String(selectedSize));
     if (!selectedSizeData) return 0;
-    const basePrice = parseFloat(selectedSizeData.price_per_unit || '0');
+    const basePrice = parseFloat(selectedSizeData.price_per_unit as string || '0'); 
     return parseFloat((basePrice * quantity).toFixed(2));
   };
 
