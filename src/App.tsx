@@ -20,6 +20,7 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminBlogs from "./pages/admin/AdminBlogs";
 import NotFound from "./pages/NotFound";
+import AboutUs from "./pages/AboutUs";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/faq" element={<FAQ />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/returns" element={<Returns />} />
+          <Route path="/about" element={<AboutUs />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminDashboard />} />
