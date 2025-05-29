@@ -15,7 +15,8 @@ const ProductShowcase = () => {
           *,
           product_images (
             image_url,
-            alt_text
+            alt_text,
+            image_type
           ),
           product_sizes (
             price_per_unit
@@ -52,35 +53,42 @@ const ProductShowcase = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-bold text-center mb-12">Our Products</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {products?.map((product) => (
-            <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="aspect-square bg-gray-100 relative">
-                {product.product_images?.[0] ? (
-                  <img
-                    src={product.product_images[0].image_url}
-                    alt={product.product_images[0].alt_text || product.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    No Image
-                  </div>
-                )}
-              </div>
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
-                <p className="text-gray-600 mb-4">{product.description}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold text-orange-600">
-                    From ${Math.min(...(product.product_sizes?.map(s => s.price_per_unit) || [0]))}
-                  </span>
-                  <Button asChild className="bg-orange-600 hover:bg-orange-700">
-                    <Link to={`/product/${product.id}`}>View Details</Link>
-                  </Button>
+          {products?.map((product) => {
+            // Find feature image or fall back to first gallery image or null
+            const featureImage = product.feature_image_url || 
+                                 product.product_images?.find((img: any) => img.image_type === 'feature')?.image_url ||
+                                 product.product_images?.[0]?.image_url;
+            
+            return (
+              <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
+                <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                  {featureImage ? (
+                    <img
+                      src={featureImage}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      No Image
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-semibold mb-2 group-hover:text-orange-600 transition-colors">{product.name}</h3>
+                  <p className="text-gray-600 mb-4 line-clamp-2">{product.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold text-orange-600">
+                      From ${Math.min(...(product.product_sizes?.map(s => s.price_per_unit) || [0]))}
+                    </span>
+                    <Button asChild className="bg-orange-600 hover:bg-orange-700">
+                      <Link to={`/product/${product.id}`}>View Details</Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>

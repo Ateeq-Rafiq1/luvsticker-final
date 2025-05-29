@@ -17,6 +17,7 @@ export type Database = {
           excerpt: string | null
           id: string
           is_published: boolean | null
+          meta_tags: string[] | null
           published_at: string | null
           slug: string
           title: string
@@ -29,6 +30,7 @@ export type Database = {
           excerpt?: string | null
           id?: string
           is_published?: boolean | null
+          meta_tags?: string[] | null
           published_at?: string | null
           slug: string
           title: string
@@ -41,6 +43,7 @@ export type Database = {
           excerpt?: string | null
           id?: string
           is_published?: boolean | null
+          meta_tags?: string[] | null
           published_at?: string | null
           slug?: string
           title?: string
@@ -126,6 +129,7 @@ export type Database = {
           created_at: string
           display_order: number | null
           id: string
+          image_type: string | null
           image_url: string
           product_id: string | null
         }
@@ -134,6 +138,7 @@ export type Database = {
           created_at?: string
           display_order?: number | null
           id?: string
+          image_type?: string | null
           image_url: string
           product_id?: string | null
         }
@@ -142,6 +147,7 @@ export type Database = {
           created_at?: string
           display_order?: number | null
           id?: string
+          image_type?: string | null
           image_url?: string
           product_id?: string | null
         }
@@ -201,6 +207,7 @@ export type Database = {
           base_price: number
           created_at: string
           description: string | null
+          feature_image_url: string | null
           id: string
           is_active: boolean | null
           name: string
@@ -210,6 +217,7 @@ export type Database = {
           base_price?: number
           created_at?: string
           description?: string | null
+          feature_image_url?: string | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -219,6 +227,7 @@ export type Database = {
           base_price?: number
           created_at?: string
           description?: string | null
+          feature_image_url?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
