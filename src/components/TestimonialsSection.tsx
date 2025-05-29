@@ -1,53 +1,65 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
 
-const TestimonialsSection = () => {
-  const { data: testimonials, isLoading } = useQuery({
-    queryKey: ['testimonials'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('testimonials')
-        .select('*')
-        .eq('is_featured', true)
-        .order('display_order', { ascending: true });
-      
-      return data || [];
-    }
-  });
-
-  if (isLoading || !testimonials?.length) {
-    return null;
-  }
+const Testimonials = () => {
+  const testimonialsData = [
+    {
+      id: 1,
+      name: "Alice Johnson",
+      avatar: "https://i.pravatar.cc/150?img=5",
+      rating: 5,
+      comment: "iStickers made my custom sticker dreams come true! The quality is outstanding and the colors are so vibrant. Will definitely order again!",
+    },
+    {
+      id: 2,
+      name: "Bob Williams",
+      avatar: "https://i.pravatar.cc/150?img=11",
+      rating: 4,
+      comment: "Great service and fast shipping. The stickers were exactly as I designed them. Only wish there were more material options.",
+    },
+    {
+      id: 3,
+      name: "Charlie Brown",
+      avatar: "https://i.pravatar.cc/150?img=14",
+      rating: 5,
+      comment: "The holographic stickers I ordered are a hit! They look amazing on my laptop and water bottle. Thanks, iStickers!",
+    },
+  ];
 
   return (
-    <section className="py-16 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-center mb-12">What Our Customers Say</h2>
-        <div className="flex overflow-x-auto space-x-6 pb-4">
-          {testimonials.map((testimonial) => (
-            <Card key={testimonial.id} className="flex-shrink-0 w-80">
+    <section className="py-24 bg-white">
+      <div className="container mx-auto px-4">
+        <div className="mb-12 text-center">
+          <span className="inline-block px-4 py-1 rounded-full bg-istickers-blue/10 text-istickers-blue font-medium text-sm mb-4">Trusted by Thousands</span>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-istickers-dark">
+            What Our Customers Say
+          </h2>
+          <p className="text-xl text-gray-700">
+            We're proud to have so many happy customers. Here's what some of them have to say about their iStickers experience.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {testimonialsData.map((testimonial) => (
+            <Card key={testimonial.id} className="bg-white shadow-md rounded-lg overflow-hidden">
               <CardContent className="p-6">
-                <div className="flex mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-gray-600 mb-4">"{testimonial.content}"</p>
-                <div className="flex items-center">
-                  {testimonial.image_url && (
-                    <img
-                      src={testimonial.image_url}
-                      alt={testimonial.customer_name}
-                      className="w-10 h-10 rounded-full mr-3"
-                    />
-                  )}
+                <div className="flex items-center mb-4">
+                  <Avatar className="w-10 h-10 mr-4">
+                    <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
+                    <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
                   <div>
-                    <p className="font-semibold">{testimonial.customer_name}</p>
+                    <h3 className="text-lg font-semibold">{testimonial.name}</h3>
+                    <div className="flex items-center text-yellow-500">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 fill-yellow-500" />
+                      ))}
+                    </div>
                   </div>
                 </div>
+                <p className="text-gray-700">"{testimonial.comment}"</p>
               </CardContent>
             </Card>
           ))}
@@ -57,4 +69,4 @@ const TestimonialsSection = () => {
   );
 };
 
-export default TestimonialsSection;
+export default Testimonials;
