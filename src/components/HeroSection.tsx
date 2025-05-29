@@ -22,7 +22,7 @@ const Hero = () => {
             </p>
             
             <div className="flex flex-wrap gap-4 pt-4">
-              <Link to="/catalog" className="bg-white text-istickers-orange font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-all shadow-md inline-flex items-center gap-2">
+              <Link to="/products" className="bg-white text-istickers-orange font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-all shadow-md inline-flex items-center gap-2">
                 Browse Designs
                 <ArrowRight size={18} />
               </Link>
