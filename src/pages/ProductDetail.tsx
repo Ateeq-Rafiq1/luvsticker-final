@@ -12,9 +12,7 @@ import Footer from "@/components/Footer";
 import { toast } from "@/hooks/use-toast";
 
 const ProductDetail = () => {
-  const {
-    id
-  } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [customWidth, setCustomWidth] = useState("");
@@ -24,20 +22,20 @@ const ProductDetail = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [mainImage, setMainImage] = useState<string>("");
 
-  const {
-    data: product,
-    isLoading
-  } = useQuery({
+  const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
-      const {
-        data
-      } = await supabase.from('products').select(`
+      const { data } = await supabase
+        .from('products')
+        .select(`
           *,
           product_images (*),
           product_sizes (*),
           quantity_tiers (*)
-        `).eq('id', id).single();
+        `)
+        .eq('id', id)
+        .single();
+      
       if (data) {
         const initialImage = data.feature_image_url || 
           data.product_images?.find((img: any) => img.image_type === 'gallery')?.image_url;

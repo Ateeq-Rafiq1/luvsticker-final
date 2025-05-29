@@ -17,9 +17,6 @@ const Navbar = () => {
           <Link to="/" className="flex items-center">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
           </Link>
-          {/* <Link to="/" className="flex items-center">
-            <h1 className="text-2xl font-bold text-orange-600">StickerStore</h1>
-          </Link> */}
           
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/" className="text-gray-700 hover:text-orange-600 transition-colors">
@@ -38,6 +35,9 @@ const Navbar = () => {
                 <ChevronDown className="ml-1 w-4 h-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <Link to="/about">About Us</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/faq">FAQ</Link>
                 </DropdownMenuItem>
@@ -58,7 +58,6 @@ const Navbar = () => {
             </Button>
           </div>
           
-          {/* Mobile menu button - you can expand this later */}
           <div className="md:hidden">
             <Button asChild size="sm" className="bg-orange-600 hover:bg-orange-700">
               <Link to="/products">Shop</Link>
