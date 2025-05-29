@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, ChevronLeft, ChevronRight } from "lucide-react";
+import { Upload, ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { toast } from "@/hooks/use-toast";
@@ -19,7 +19,6 @@ const ProductDetail = () => {
   const [customWidth, setCustomWidth] = useState("");
   const [customHeight, setCustomHeight] = useState("");
   const [quantity, setQuantity] = useState(500);
-  const [customQuantity, setCustomQuantity] = useState("");
   const [artwork, setArtwork] = useState<File | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [mainImage, setMainImage] = useState<string>("");
@@ -39,7 +38,6 @@ const ProductDetail = () => {
         .single();
       
       if (data) {
-        // Set initial main image to feature image or first gallery image
         const initialImage = data.feature_image_url || 
                             data.product_images?.find((img: any) => img.image_type === 'gallery')?.image_url;
         setMainImage(initialImage || '');
@@ -50,20 +48,35 @@ const ProductDetail = () => {
     enabled: !!id
   });
 
-  const { data: settings } = useQuery({
-    queryKey: ['quantity-settings'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('site_settings')
-        .select('*')
-        .in('key', ['min_quantity', 'max_quantity']);
-      
-      return data?.reduce((acc, setting) => {
-        acc[setting.key] = parseInt(setting.value || '0');
-        return acc;
-      }, {} as Record<string, number>) || {};
+  const handleQuantityChange = (change: number) => {
+    const newQuantity = Math.max(50, quantity + change);
+    setQuantity(newQuantity);
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (file.size > 50 * 1024 * 1024) { // 50MB limit
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 50MB",
+        variant: "destructive"
+      });
+      return;
     }
-  });
+
+    setArtwork(file);
+    toast({
+      title: "Artwork uploaded",
+      description: `${file.name} has been selected`
+    });
+  };
+
+  const calculateTotal = () => {
+    const selectedSizeData = product?.product_sizes?.find(s => s.id === selectedSize);
+    if (!selectedSizeData) return 0;
+    
+    const basePrice = parseFloat(selectedSizeData.price_per_unit || '0');
+    return (basePrice * quantity).toFixed(2);
+  };
 
   const handleStartOrder = () => {
     if (!selectedSize) {
@@ -85,20 +98,18 @@ const ProductDetail = () => {
     const orderData = {
       productId: id,
       sizeId: selectedSize,
-      quantity: customQuantity ? parseInt(customQuantity) : quantity,
+      quantity,
       customWidth: customWidth ? parseFloat(customWidth) : null,
       customHeight: customHeight ? parseFloat(customHeight) : null,
-      artwork
+      total: calculateTotal()
     };
 
-    sessionStorage.setItem('orderData', JSON.stringify({
-      ...orderData,
-      artwork: null
-    }));
+    sessionStorage.setItem('orderData', JSON.stringify(orderData));
     
     const reader = new FileReader();
     reader.onload = () => {
       sessionStorage.setItem('orderArtwork', reader.result as string);
+      sessionStorage.setItem('orderArtworkName', artwork.name);
       navigate('/checkout');
     };
     reader.readAsDataURL(artwork);
@@ -108,6 +119,13 @@ const ProductDetail = () => {
     if (currentStep === 1 && !selectedSize) {
       toast({
         title: "Please select a size",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (currentStep === 3 && !artwork) {
+      toast({
+        title: "Please upload your artwork",
         variant: "destructive"
       });
       return;
@@ -232,55 +250,57 @@ const ProductDetail = () => {
               <p className="text-gray-600 text-lg leading-relaxed">{product.description}</p>
             </div>
 
-            {/* Step Progress Indicator */}
+            {/* Enhanced Step Progress Indicator */}
             <div className="bg-white rounded-xl p-6 shadow-lg">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-8">
                 {[1, 2, 3, 4].map((step) => (
                   <div key={step} className="flex items-center">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
-                      step <= currentStep ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-500'
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                      step <= currentStep 
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg transform scale-110' 
+                        : 'bg-gray-200 text-gray-500'
                     }`}>
                       {step}
                     </div>
                     {step < 4 && (
-                      <div className={`w-12 h-0.5 mx-2 ${
-                        step < currentStep ? 'bg-orange-600' : 'bg-gray-200'
+                      <div className={`w-16 h-1 mx-2 rounded-full transition-all duration-500 ${
+                        step < currentStep ? 'bg-gradient-to-r from-orange-500 to-orange-600' : 'bg-gray-200'
                       }`} />
                     )}
                   </div>
                 ))}
               </div>
               <h2 className="text-2xl font-semibold text-center text-gray-900">
-                Step {currentStep}: {stepTitles[currentStep as keyof typeof stepTitles]}
+                {stepTitles[currentStep as keyof typeof stepTitles]}
               </h2>
             </div>
 
             {/* Step Content */}
-            <Card className="shadow-lg">
+            <Card className="shadow-lg overflow-hidden">
               <CardContent className="p-8">
                 {/* Step 1: Choose Size */}
                 {currentStep === 1 && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {product.product_sizes?.map((size) => (
                         <Button
                           key={size.id}
                           variant={selectedSize === size.id ? "default" : "outline"}
-                          className={`p-6 h-auto border-2 transition-all ${
+                          className={`p-4 h-auto border-2 transition-all duration-200 ${
                             selectedSize === size.id 
-                              ? 'bg-orange-600 hover:bg-orange-700 border-orange-600' 
-                              : 'border-gray-200 hover:border-orange-300'
+                              ? 'bg-orange-600 hover:bg-orange-700 border-orange-600 shadow-lg transform scale-105' 
+                              : 'border-gray-200 hover:border-orange-300 hover:shadow-md'
                           }`}
                           onClick={() => setSelectedSize(size.id)}
                         >
                           <div className="text-center">
-                            <div className="font-semibold text-lg">{size.size_name}</div>
+                            <div className="font-semibold">{size.size_name}</div>
                             {!size.is_custom && (
-                              <div className="text-sm opacity-75 mt-1">
+                              <div className="text-xs opacity-75 mt-1">
                                 {size.width}" × {size.height}"
                               </div>
                             )}
-                            <div className="text-lg font-bold mt-2">${size.price_per_unit}/each</div>
+                            <div className="text-sm font-bold mt-2">${size.price_per_unit}/ea</div>
                           </div>
                         </Button>
                       ))}
@@ -324,40 +344,44 @@ const ProductDetail = () => {
                 {/* Step 2: Select Quantity */}
                 {currentStep === 2 && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-3 gap-4">
-                      {[500, 1000, 1500].map((qty) => (
+                    <div className="text-center">
+                      <Label className="text-lg font-semibold mb-4 block">Select Quantity</Label>
+                      <div className="flex items-center justify-center gap-4 mb-6">
                         <Button
-                          key={qty}
-                          variant={quantity === qty && !customQuantity ? "default" : "outline"}
-                          className={`p-6 h-auto border-2 transition-all ${
-                            quantity === qty && !customQuantity
-                              ? 'bg-orange-600 hover:bg-orange-700 border-orange-600'
-                              : 'border-gray-200 hover:border-orange-300'
-                          }`}
-                          onClick={() => {
-                            setQuantity(qty);
-                            setCustomQuantity("");
-                          }}
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleQuantityChange(-100)}
+                          className="h-12 w-12"
                         >
-                          <div className="text-center">
-                            <div className="text-2xl font-bold">{qty}</div>
-                            <div className="text-sm opacity-75">pieces</div>
-                          </div>
+                          <Minus className="h-4 w-4" />
                         </Button>
-                      ))}
+                        <div className="text-center">
+                          <Input
+                            type="number"
+                            value={quantity}
+                            onChange={(e) => setQuantity(Math.max(50, parseInt(e.target.value) || 0))}
+                            className="text-center text-xl font-bold w-32 h-12"
+                            min="50"
+                          />
+                          <div className="text-sm text-gray-500 mt-1">pieces</div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleQuantityChange(100)}
+                          className="h-12 w-12"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <Label htmlFor="custom-quantity" className="text-sm font-medium">Custom Quantity</Label>
-                      <Input
-                        id="custom-quantity"
-                        type="number"
-                        min={settings?.min_quantity || 50}
-                        max={settings?.max_quantity || 10000}
-                        value={customQuantity}
-                        onChange={(e) => setCustomQuantity(e.target.value)}
-                        placeholder={`${settings?.min_quantity || 50} - ${settings?.max_quantity || 10000}`}
-                        className="mt-2"
-                      />
+                    
+                    <div className="bg-gray-50 rounded-lg p-6 text-center">
+                      <div className="text-sm text-gray-600 mb-2">Total Price</div>
+                      <div className="text-3xl font-bold text-orange-600">${calculateTotal()}</div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        ${selectedSizeData?.price_per_unit}/each × {quantity} pieces
+                      </div>
                     </div>
                   </div>
                 )}
@@ -365,55 +389,90 @@ const ProductDetail = () => {
                 {/* Step 3: Upload Artwork */}
                 {currentStep === 3 && (
                   <div className="space-y-6">
-                    <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Upload className="w-12 h-12 mb-4 text-gray-400" />
-                        <p className="mb-2 text-lg text-gray-600">
-                          <span className="font-semibold">Click to upload</span> your artwork
-                        </p>
-                        <p className="text-sm text-gray-500">PNG, JPG, PDF (MAX. 10MB)</p>
-                      </div>
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*,.pdf"
-                        onChange={(e) => setArtwork(e.target.files?.[0] || null)}
-                      />
-                    </label>
-                    {artwork && (
-                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-green-700 font-medium">
-                          ✓ Selected: {artwork.name}
-                        </p>
-                      </div>
-                    )}
+                    <div className="text-center">
+                      <Label className="text-lg font-semibold mb-4 block">Upload Your Artwork</Label>
+                      {!artwork ? (
+                        <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-12 h-12 mb-4 text-gray-400" />
+                            <p className="mb-2 text-lg text-gray-600">
+                              <span className="font-semibold">Click to upload</span> your artwork
+                            </p>
+                            <p className="text-sm text-gray-500">PNG, JPG, PDF (MAX. 50MB)</p>
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*,.pdf"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleFileUpload(file);
+                            }}
+                          />
+                        </label>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="p-6 bg-green-50 border-2 border-green-200 rounded-lg">
+                            <div className="flex items-center justify-center mb-4">
+                              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                                <Upload className="w-8 h-8 text-green-600" />
+                              </div>
+                            </div>
+                            <p className="text-green-700 font-semibold text-lg">
+                              ✓ {artwork.name}
+                            </p>
+                            <p className="text-green-600 text-sm mt-1">
+                              File size: {(artwork.size / (1024 * 1024)).toFixed(2)} MB
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            onClick={() => setArtwork(null)}
+                            className="w-full"
+                          >
+                            Upload Different File
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
                 {/* Step 4: Complete Order */}
                 {currentStep === 4 && (
-                  <div className="space-y-6 text-center">
-                    <div className="p-6 bg-gray-50 rounded-lg">
-                      <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
-                      <div className="space-y-2 text-left">
-                        <div className="flex justify-between">
-                          <span>Product:</span>
-                          <span className="font-medium">{product.name}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Size:</span>
-                          <span className="font-medium">{selectedSizeData?.size_name}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Quantity:</span>
-                          <span className="font-medium">{customQuantity || quantity}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Artwork:</span>
-                          <span className="font-medium">{artwork?.name}</span>
-                        </div>
+                  <div className="space-y-6">
+                    <div className="text-center mb-6">
+                      <h3 className="text-2xl font-bold mb-2">Order Summary</h3>
+                      <p className="text-gray-600">Please review your order before proceeding</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                        <span className="font-medium">Product:</span>
+                        <span className="text-right">{product.name}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                        <span className="font-medium">Size:</span>
+                        <span className="text-right">{selectedSizeData?.size_name}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                        <span className="font-medium">Quantity:</span>
+                        <span className="text-right">{quantity} pieces</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                        <span className="font-medium">Unit Price:</span>
+                        <span className="text-right">${selectedSizeData?.price_per_unit}/each</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                        <span className="font-medium">Artwork:</span>
+                        <span className="text-right text-sm">{artwork?.name}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-3 text-xl font-bold text-orange-600">
+                        <span>Total:</span>
+                        <span>${calculateTotal()}</span>
                       </div>
                     </div>
+                    
                     <Button 
                       size="lg" 
                       className="w-full bg-orange-600 hover:bg-orange-700 text-lg py-6"
@@ -425,17 +484,17 @@ const ProductDetail = () => {
                 )}
 
                 {/* Navigation Buttons */}
-                {currentStep < 4 && (
-                  <div className="flex justify-between mt-8 pt-6 border-t">
-                    <Button
-                      variant="outline"
-                      onClick={prevStep}
-                      disabled={currentStep === 1}
-                      className="flex items-center gap-2"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      Back
-                    </Button>
+                <div className="flex justify-between mt-8 pt-6 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={prevStep}
+                    disabled={currentStep === 1}
+                    className="flex items-center gap-2"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Back
+                  </Button>
+                  {currentStep < 4 && (
                     <Button
                       onClick={nextStep}
                       className="bg-orange-600 hover:bg-orange-700 flex items-center gap-2"
@@ -443,8 +502,8 @@ const ProductDetail = () => {
                       Next
                       <ChevronRight className="w-4 h-4" />
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
