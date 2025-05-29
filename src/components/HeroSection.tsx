@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 const Hero = () => {
   const benefits = ["Free Shipping on $35+", "Premium Materials", "100% Satisfaction"];
-  return <div className="relative overflow-hidden bg-istickers-orange">
+  return <div className="relative overflow-hidden bg-istickers-orange bg-[#ff8000]">
       <div className="container mx-auto px-4 py-20 md:py-32 bg-[#ff7e00]">
         <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-12">
           <div className="w-full md:w-1/2 space-y-6 animate-fade-in">
