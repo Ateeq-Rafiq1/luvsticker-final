@@ -210,7 +210,7 @@ const ProductDetail = () => {
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {product.feature_image_url && (
                   <button
-                    onClick={() => setMainImage(product.feature_image_url)}
+                    onClick={() => setMainImage(product.feature_image_url || '')}
                     className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
                       mainImage === product.feature_image_url ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'
                     }`}
@@ -225,7 +225,7 @@ const ProductDetail = () => {
                 {galleryImages.map((image: any) => (
                   <button
                     key={image.id}
-                    onClick={() => setMainImage(image.image_url)}
+                    onClick={() => setMainImage(image.image_url || '')}
                     className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
                       mainImage === image.image_url ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'
                     }`}
