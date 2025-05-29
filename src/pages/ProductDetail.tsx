@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,7 @@ const ProductDetail = () => {
   const [artwork, setArtwork] = useState<File | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [mainImage, setMainImage] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
 
   // --- START OF INTERFACES TO PASTE ---
 
@@ -90,6 +92,25 @@ interface Product {
     setQuantity(newQuantity);
   };
 
+  const uploadArtworkToSupabase = async (file: File): Promise<string> => {
+    const fileName = `${Date.now()}-${file.name}`;
+    const { data, error } = await supabase.storage
+      .from('artwork-uploads')
+      .upload(fileName, file);
+
+    if (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('artwork-uploads')
+      .getPublicUrl(fileName);
+
+    return publicUrlData.publicUrl;
+  };
+
   const handleFileUpload = async (file: File) => {
     if (file.size > 50 * 1024 * 1024) { // 50MB limit
       toast({
@@ -99,11 +120,31 @@ interface Product {
       });
       return;
     }
-    setArtwork(file);
-    toast({
-      title: "Artwork uploaded",
-      description: `${file.name} has been selected`
-    });
+
+    setIsUploading(true);
+    
+    try {
+      // Upload to Supabase storage
+      const artworkUrl = await uploadArtworkToSupabase(file);
+      
+      // Store the Supabase URL in session storage
+      sessionStorage.setItem('artworkUrl', artworkUrl);
+      
+      setArtwork(file);
+      toast({
+        title: "Artwork uploaded successfully",
+        description: `${file.name} has been uploaded to cloud storage`
+      });
+    } catch (error) {
+      console.error('Error uploading artwork:', error);
+      toast({
+        title: "Upload failed",
+        description: "Please try uploading your artwork again",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const calculateTotal = () => {
@@ -329,11 +370,18 @@ interface Product {
                               <span className="font-semibold">Click to upload</span> your artwork
                             </p>
                             <p className="text-sm text-gray-500">PNG, JPG, PDF (MAX. 50MB)</p>
+                            {isUploading && <p className="text-sm text-orange-600 mt-2">Uploading...</p>}
                           </div>
-                          <input type="file" className="hidden" accept="image/*,.pdf" onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (file) handleFileUpload(file);
-                    }} />
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*,.pdf" 
+                            disabled={isUploading}
+                            onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (file) handleFileUpload(file);
+                            }} 
+                          />
                         </label> : <div className="space-y-4">
                           <div className="p-6 bg-green-50 border-2 border-green-200 rounded-lg">
                             <div className="flex items-center justify-center mb-4">
@@ -347,8 +395,19 @@ interface Product {
                             <p className="text-green-600 text-sm mt-1">
                               File size: {(artwork.size / (1024 * 1024)).toFixed(2)} MB
                             </p>
+                            <p className="text-green-600 text-sm">
+                              Uploaded to cloud storage successfully
+                            </p>
                           </div>
-                          <Button variant="outline" onClick={() => setArtwork(null)} className="w-full">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => {
+                              setArtwork(null);
+                              sessionStorage.removeItem('artworkUrl');
+                            }} 
+                            className="w-full"
+                            disabled={isUploading}
+                          >
                             Upload Different File
                           </Button>
                         </div>}

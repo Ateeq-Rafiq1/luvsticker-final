@@ -59,6 +59,11 @@ export type Database = {
           custom_width: number | null
           customer_email: string
           customer_name: string | null
+          delivery_address: string | null
+          delivery_city: string | null
+          delivery_country: string | null
+          delivery_postal_code: string | null
+          delivery_state: string | null
           id: string
           order_number: string
           product_id: string | null
@@ -77,6 +82,11 @@ export type Database = {
           custom_width?: number | null
           customer_email: string
           customer_name?: string | null
+          delivery_address?: string | null
+          delivery_city?: string | null
+          delivery_country?: string | null
+          delivery_postal_code?: string | null
+          delivery_state?: string | null
           id?: string
           order_number: string
           product_id?: string | null
@@ -95,6 +105,11 @@ export type Database = {
           custom_width?: number | null
           customer_email?: string
           customer_name?: string | null
+          delivery_address?: string | null
+          delivery_city?: string | null
+          delivery_country?: string | null
+          delivery_postal_code?: string | null
+          delivery_state?: string | null
           id?: string
           order_number?: string
           product_id?: string | null

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,11 @@ const Checkout = () => {
   const navigate = useNavigate();
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryCity, setDeliveryCity] = useState("");
+  const [deliveryState, setDeliveryState] = useState("");
+  const [deliveryPostalCode, setDeliveryPostalCode] = useState("");
+  const [deliveryCountry, setDeliveryCountry] = useState("United States");
   const [isLoading, setIsLoading] = useState(false);
   const [orderData, setOrderData] = useState<any>(null);
   const [artworkPreview, setArtworkPreview] = useState<string>("");
@@ -42,7 +48,7 @@ const Checkout = () => {
   };
 
   const handleSubmitOrder = async () => {
-    if (!customerName || !customerEmail) {
+    if (!customerName || !customerEmail || !deliveryAddress || !deliveryCity || !deliveryState || !deliveryPostalCode) {
       toast({
         title: "Please fill in all required fields",
         variant: "destructive"
@@ -56,20 +62,29 @@ const Checkout = () => {
       // Generate unique order number
       const orderNumber = generateOrderNumber();
       
+      // Get artwork URL from session storage
+      const artworkUrl = sessionStorage.getItem('artworkUrl') || null;
+      
       // Create order in database
       const { data: order, error } = await supabase
         .from('orders')
         .insert({
           customer_email: customerEmail,
           customer_name: customerName,
+          delivery_address: deliveryAddress,
+          delivery_city: deliveryCity,
+          delivery_state: deliveryState,
+          delivery_postal_code: deliveryPostalCode,
+          delivery_country: deliveryCountry,
           product_id: orderData.productId,
           size_id: orderData.sizeId,
           quantity: orderData.quantity,
           custom_width: orderData.customWidth,
           custom_height: orderData.customHeight,
           total_amount: parseFloat(orderData.total),
+          artwork_url: artworkUrl,
           status: 'pending',
-          order_number: orderNumber // Use our generated order number
+          order_number: orderNumber
         })
         .select()
         .single();
@@ -144,32 +159,93 @@ const Checkout = () => {
           {/* Customer Information */}
           <Card className="shadow-lg">
             <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 bg-orange-500">
-              <CardTitle className="text-xl text-orange-800">Customer Information</CardTitle>
+              <CardTitle className="text-xl text-orange-800">Customer & Delivery Information</CardTitle>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
-              <div>
-                <Label htmlFor="name" className="text-base font-medium">Full Name *</Label>
-                <Input 
-                  id="name" 
-                  value={customerName} 
-                  onChange={(e) => setCustomerName(e.target.value)} 
-                  placeholder="Enter your full name" 
-                  className="mt-2 h-12" 
-                />
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">Contact Information</h3>
+                <div>
+                  <Label htmlFor="name" className="text-base font-medium">Full Name *</Label>
+                  <Input 
+                    id="name" 
+                    value={customerName} 
+                    onChange={(e) => setCustomerName(e.target.value)} 
+                    placeholder="Enter your full name" 
+                    className="mt-2 h-12" 
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email" className="text-base font-medium">Email Address *</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={customerEmail} 
+                    onChange={(e) => setCustomerEmail(e.target.value)} 
+                    placeholder="Enter your email address" 
+                    className="mt-2 h-12" 
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Order confirmation and tracking info will be sent to this email
+                  </p>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="email" className="text-base font-medium">Email Address *</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  value={customerEmail} 
-                  onChange={(e) => setCustomerEmail(e.target.value)} 
-                  placeholder="Enter your email address" 
-                  className="mt-2 h-12" 
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Order confirmation and tracking info will be sent to this email
-                </p>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg text-gray-900 border-b pb-2">Delivery Address</h3>
+                <div>
+                  <Label htmlFor="address" className="text-base font-medium">Street Address *</Label>
+                  <Input 
+                    id="address" 
+                    value={deliveryAddress} 
+                    onChange={(e) => setDeliveryAddress(e.target.value)} 
+                    placeholder="Enter street address" 
+                    className="mt-2 h-12" 
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="city" className="text-base font-medium">City *</Label>
+                    <Input 
+                      id="city" 
+                      value={deliveryCity} 
+                      onChange={(e) => setDeliveryCity(e.target.value)} 
+                      placeholder="City" 
+                      className="mt-2 h-12" 
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state" className="text-base font-medium">State *</Label>
+                    <Input 
+                      id="state" 
+                      value={deliveryState} 
+                      onChange={(e) => setDeliveryState(e.target.value)} 
+                      placeholder="State" 
+                      className="mt-2 h-12" 
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="postalCode" className="text-base font-medium">Postal Code *</Label>
+                    <Input 
+                      id="postalCode" 
+                      value={deliveryPostalCode} 
+                      onChange={(e) => setDeliveryPostalCode(e.target.value)} 
+                      placeholder="ZIP/Postal Code" 
+                      className="mt-2 h-12" 
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="country" className="text-base font-medium">Country *</Label>
+                    <Input 
+                      id="country" 
+                      value={deliveryCountry} 
+                      onChange={(e) => setDeliveryCountry(e.target.value)} 
+                      placeholder="Country" 
+                      className="mt-2 h-12" 
+                    />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

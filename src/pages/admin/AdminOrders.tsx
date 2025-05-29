@@ -245,7 +245,7 @@ const AdminOrders = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
                     {/* Customer Information */}
                     <div className="space-y-3">
                       <h4 className="font-semibold text-gray-900 flex items-center">
@@ -255,6 +255,27 @@ const AdminOrders = () => {
                       <div className="space-y-1">
                         <p className="text-sm font-medium">{order.customer_name}</p>
                         <p className="text-sm text-gray-600">{order.customer_email}</p>
+                      </div>
+                    </div>
+
+                    {/* Delivery Address */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-gray-900 flex items-center">
+                        <MapPin className="w-4 h-4 mr-2" />
+                        Delivery Address
+                      </h4>
+                      <div className="space-y-1">
+                        {order.delivery_address ? (
+                          <>
+                            <p className="text-sm">{order.delivery_address}</p>
+                            <p className="text-sm text-gray-600">
+                              {order.delivery_city}, {order.delivery_state} {order.delivery_postal_code}
+                            </p>
+                            <p className="text-sm text-gray-600">{order.delivery_country}</p>
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">No delivery address provided</p>
+                        )}
                       </div>
                     </div>
 
