@@ -5,19 +5,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Package, Mail, Clock, Download, Eye } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const OrderSuccess = () => {
   const [searchParams] = useSearchParams();
   const orderNumber = searchParams.get('order');
+  const sessionId = searchParams.get('session_id');
+  const [isProcessing, setIsProcessing] = useState(true);
 
   useEffect(() => {
-    // Send order confirmation emails when the page loads
-    const sendConfirmationEmails = async () => {
-      if (orderNumber) {
+    const processPaymentSuccess = async () => {
+      if (orderNumber && sessionId) {
         try {
-          // Fetch order details from database
+          // Update order status to paid
+          await supabase
+            .from('orders')
+            .update({ status: 'paid' })
+            .eq('order_number', orderNumber)
+            .eq('stripe_session_id', sessionId);
+
+          // Get order details for email
           const { data: order } = await supabase
             .from('orders')
             .select(`
@@ -30,8 +38,14 @@ const OrderSuccess = () => {
 
           if (order) {
             // Get artwork name from session storage if available
-            const artworkName = sessionStorage.getItem('orderArtworkName');
+            const pendingOrder = sessionStorage.getItem('pendingOrder');
+            let artworkName = '';
+            if (pendingOrder) {
+              const orderData = JSON.parse(pendingOrder);
+              artworkName = orderData.artworkName || '';
+            }
             
+            // Send confirmation emails
             await supabase.functions.invoke('send-order-confirmation', {
               body: {
                 customerEmail: order.customer_email,
@@ -46,15 +60,37 @@ const OrderSuccess = () => {
                 }
               }
             });
+
+            // Clear session storage
+            sessionStorage.removeItem('orderData');
+            sessionStorage.removeItem('orderArtwork');
+            sessionStorage.removeItem('orderArtworkName');
+            sessionStorage.removeItem('pendingOrder');
           }
         } catch (error) {
-          console.error('Error sending confirmation emails:', error);
+          console.error('Error processing payment success:', error);
         }
       }
+      setIsProcessing(false);
     };
 
-    sendConfirmationEmails();
-  }, [orderNumber]);
+    processPaymentSuccess();
+  }, [orderNumber, sessionId]);
+
+  if (isProcessing) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Processing your order...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -68,7 +104,7 @@ const OrderSuccess = () => {
               </div>
             </div>
             <h1 className="text-4xl font-bold mb-4 text-green-600">
-              Order Confirmed!
+              Payment Successful!
             </h1>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
               Thank you for your order! We're excited to create your custom stickers and bring your design to life.
@@ -80,10 +116,10 @@ const OrderSuccess = () => {
               <div className="text-center">
                 <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-6 mb-6">
                   <h2 className="text-2xl font-semibold mb-2 text-orange-800">
-                    Order #{orderNumber || 'STK-20241129-1234'}
+                    Order #{orderNumber || 'Processing...'}
                   </h2>
                   <p className="text-orange-700">
-                    Your order has been received and is being processed
+                    Your payment has been processed and order confirmed
                   </p>
                 </div>
                 
