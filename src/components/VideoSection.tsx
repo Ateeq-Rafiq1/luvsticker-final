@@ -29,7 +29,7 @@ const VideoSection = () => {
         </p>
         <div className="aspect-video">
           <iframe
-            src={videoSettings?.video_embed_url || 'https://www.youtube.com/embed/WtPXc5w0MUc?controls=0&modestbranding=1&rel=0&showinfo=0'}
+            src={videoSettings?.video_embed_url || 'https://www.youtube.com/embed/WtPXc5w0MUc'}
             className="w-full h-full rounded-lg shadow-lg"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
