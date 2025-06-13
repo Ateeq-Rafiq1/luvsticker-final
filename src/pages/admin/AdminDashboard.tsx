@@ -1,9 +1,10 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Package, ShoppingCart, FileText, Settings, LogOut } from "lucide-react";
+import { Package, ShoppingCart, FileText, Settings, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
@@ -13,16 +14,18 @@ const AdminDashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
-      const [productsData, ordersData, blogsData] = await Promise.all([
+      const [productsData, ordersData, blogsData, leadsData] = await Promise.all([
         supabase.from('products').select('id'),
         supabase.from('orders').select('id'),
-        supabase.from('blogs').select('id')
+        supabase.from('blogs').select('id'),
+        supabase.from('leads').select('id')
       ]);
 
       return {
         products: productsData.data?.length || 0,
         orders: ordersData.data?.length || 0,
-        blogs: blogsData.data?.length || 0
+        blogs: blogsData.data?.length || 0,
+        leads: leadsData.data?.length || 0
       };
     }
   });
@@ -89,16 +92,16 @@ const AdminDashboard = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Settings</CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Leads</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">-</div>
+              <div className="text-2xl font-bold">{stats?.leads || 0}</div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Link to="/admin/products">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
@@ -137,6 +140,20 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">Create and manage blog posts</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/admin/leads">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="mr-2" />
+                  Manage Leads
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">View and manage contact form submissions</p>
               </CardContent>
             </Card>
           </Link>
