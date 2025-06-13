@@ -22,6 +22,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminBlogs from "./pages/admin/AdminBlogs";
+import AdminLeads from "./pages/admin/AdminLeads";
 import NotFound from "./pages/NotFound";
 import AboutUs from "./pages/AboutUs";
 
@@ -71,6 +72,11 @@ const App = () => (
             <Route path="/admin/blogs" element={
               <ProtectedRoute>
                 <AdminBlogs />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/leads" element={
+              <ProtectedRoute>
+                <AdminLeads />
               </ProtectedRoute>
             } />
             
