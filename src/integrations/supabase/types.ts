@@ -51,9 +51,40 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           artwork_url: string | null
+          artwork_via_email: boolean | null
           created_at: string
           custom_height: number | null
           custom_width: number | null
@@ -77,6 +108,7 @@ export type Database = {
         }
         Insert: {
           artwork_url?: string | null
+          artwork_via_email?: boolean | null
           created_at?: string
           custom_height?: number | null
           custom_width?: number | null
@@ -100,6 +132,7 @@ export type Database = {
         }
         Update: {
           artwork_url?: string | null
+          artwork_via_email?: boolean | null
           created_at?: string
           custom_height?: number | null
           custom_width?: number | null

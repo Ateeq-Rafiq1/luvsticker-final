@@ -1,476 +1,442 @@
 
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { toast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
+import ArtworkUploadSection from "@/components/ArtworkUploadSection";
+import { useCheckoutState } from "@/hooks/useCheckoutState";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [selectedSize, setSelectedSize] = useState<string>("");
-  const [customWidth, setCustomWidth] = useState("");
-  const [customHeight, setCustomHeight] = useState("");
-  const [quantity, setQuantity] = useState(500);
-  const [artwork, setArtwork] = useState<File | null>(null);
+  const [product, setProduct] = useState<any>(null);
+  const [sizes, setSizes] = useState<any[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
-  const [mainImage, setMainImage] = useState<string>("");
-  const [isUploading, setIsUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  const { checkoutState, updateCheckoutState } = useCheckoutState();
 
-  // --- START OF INTERFACES TO PASTE ---
-
-// Interface for product sizes fetched from Supabase
-interface ProductSize {
-  id: string; // Supabase IDs are often strings (UUIDs)
-  size_name: string;
-  width: number | null;
-  height: number | null;
-  // Crucial change: price_per_unit can be a number OR a string from Supabase
-  price_per_unit: number | string; 
-  is_custom: boolean;
-  product_id: string; // Add if it's part of the fetched product_sizes relation
-}
-
-// Interface for product images fetched from Supabase
-interface ProductImage {
-  id: string;
-  image_url: string;
-  image_type: 'feature' | 'gallery';
-  alt_text?: string;
-}
-
-// Main Product interface
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  base_price: number; // Assuming this is fetched as a number
-  is_active: boolean;
-  feature_image_url?: string;
-  // Use the defined interfaces for nested data
-  product_images: ProductImage[];
-  product_sizes: ProductSize[];
-  quantity_tiers: any[]; // Consider defining a proper interface for quantity_tiers too
-}
-
-// --- END OF INTERFACES TO PASTE ---
-
-   const {
-    data: product,
-    isLoading
-  } = useQuery<Product>({ // <--- IMPORTANT: Add <Product> here to use the interface
-    queryKey: ['product', id],
-    queryFn: async () => {
-      const {
-        data
-      } = await supabase.from('products').select(`
-        *,
-        product_images (*),
-        product_sizes (*),
-        quantity_tiers (*)
-      `).eq('id', id).single();
-      if (data) {
-        const initialImage = data.feature_image_url || 
-          data.product_images?.find((img: any) => img.image_type === 'gallery')?.image_url;
-        setMainImage(String(initialImage || ''));
-      }
-      // Ensure data is cast to Product type if it aligns with the interface
-      return data as Product; 
-    },
-    enabled: !!id
-  });
-
-  const handleQuantityChange = (change: number) => {
-    const newQuantity = Math.max(50, quantity + change);
-    setQuantity(newQuantity);
-  };
-
-  const uploadArtworkToSupabase = async (file: File): Promise<string> => {
-    const fileName = `${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage
-      .from('artwork-uploads')
-      .upload(fileName, file);
-
-    if (error) {
-      console.error('Upload error:', error);
-      throw error;
+  useEffect(() => {
+    if (id) {
+      fetchProduct();
+      fetchSizes();
     }
+  }, [id]);
 
-    // Get public URL
-    const { data: publicUrlData } = supabase.storage
-      .from('artwork-uploads')
-      .getPublicUrl(fileName);
-
-    return publicUrlData.publicUrl;
-  };
-
-  const handleFileUpload = async (file: File) => {
-    if (file.size > 50 * 1024 * 1024) { // 50MB limit
-      toast({
-        title: "File too large",
-        description: "Please select a file smaller than 50MB",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsUploading(true);
-    
+  const fetchProduct = async () => {
     try {
-      // Upload to Supabase storage
-      const artworkUrl = await uploadArtworkToSupabase(file);
-      
-      // Store the Supabase URL in session storage
-      sessionStorage.setItem('artworkUrl', artworkUrl);
-      
-      setArtwork(file);
-      toast({
-        title: "Artwork uploaded successfully",
-        description: `${file.name} has been uploaded to cloud storage`
-      });
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      setProduct(data);
     } catch (error) {
-      console.error('Error uploading artwork:', error);
+      console.error("Error fetching product:", error);
       toast({
-        title: "Upload failed",
-        description: "Please try uploading your artwork again",
-        variant: "destructive"
+        title: "Error",
+        description: "Failed to load product details",
+        variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
+      setLoading(false);
     }
+  };
+
+  const fetchSizes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("product_sizes")
+        .select("*")
+        .eq("product_id", id)
+        .order("price_per_unit");
+
+      if (error) throw error;
+      setSizes(data || []);
+    } catch (error) {
+      console.error("Error fetching sizes:", error);
+    }
+  };
+
+  const handleSizeSelect = (size: any) => {
+    updateCheckoutState({ selectedSize: size });
+  };
+
+  const handleQuantityChange = (quantity: number) => {
+    updateCheckoutState({ quantity });
+  };
+
+  const handleCustomDimensions = (width: number, height: number) => {
+    updateCheckoutState({ customDimensions: { width, height } });
+  };
+
+  const handleArtworkChange = (file: File | null) => {
+    updateCheckoutState({ artworkFile: file });
+  };
+
+  const handleEmailOptionChange = (useEmail: boolean) => {
+    updateCheckoutState({ artworkViaEmail: useEmail });
   };
 
   const calculateTotal = () => {
-    const selectedSizeData = product?.product_sizes?.find(s => String(s.id) === String(selectedSize));
-    if (!selectedSizeData) return 0;
-    const basePrice = parseFloat(selectedSizeData.price_per_unit as string || '0'); 
-    return parseFloat((basePrice * quantity).toFixed(2));
+    if (!checkoutState.selectedSize) return 0;
+    
+    let basePrice = checkoutState.selectedSize.price_per_unit;
+    if (checkoutState.customDimensions) {
+      const { width, height } = checkoutState.customDimensions;
+      const area = (width * height) / 144; // Convert to square feet
+      basePrice = basePrice * area;
+    }
+    
+    return basePrice * checkoutState.quantity;
   };
 
-  const handleStartOrder = () => {
-    if (!selectedSize) {
-      toast({
-        title: "Please select a size",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!artwork) {
-      toast({
-        title: "Please upload your artwork",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const orderData = {
+  const proceedToCheckout = () => {
+    // Store checkout state in sessionStorage for the checkout page
+    sessionStorage.setItem('checkoutState', JSON.stringify({
+      ...checkoutState,
       productId: id,
-      sizeId: selectedSize,
-      quantity,
-      customWidth: customWidth ? parseFloat(customWidth) : null,
-      customHeight: customHeight ? parseFloat(customHeight) : null,
+      productName: product.name,
       total: calculateTotal()
-    };
-
-    sessionStorage.setItem('orderData', JSON.stringify(orderData));
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      sessionStorage.setItem('orderArtwork', reader.result as string);
-      sessionStorage.setItem('orderArtworkName', artwork.name);
-      navigate('/checkout');
-    };
-    reader.readAsDataURL(artwork);
+    }));
+    
+    navigate('/checkout');
   };
 
-  const nextStep = () => {
-    if (currentStep === 1 && !selectedSize) {
-      toast({
-        title: "Please select a size",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (currentStep === 3 && !artwork) {
-      toast({
-        title: "Please upload your artwork",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setCurrentStep(prev => Math.min(prev + 1, 4));
-  };
-
-  const prevStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
-  };
-
-  if (isLoading) {
-    return <div className="min-h-screen bg-gray-50">
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-gray-300 aspect-square rounded-lg"></div>
-              <div>
-                <div className="h-8 bg-gray-300 rounded mb-4"></div>
-                <div className="h-4 bg-gray-300 rounded mb-2"></div>
-                <div className="h-4 bg-gray-300 rounded w-2/3"></div>
-              </div>
-            </div>
-          </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">Loading...</div>
         </div>
         <Footer />
-      </div>;
+      </div>
+    );
   }
 
   if (!product) {
-    return <div className="min-h-screen bg-gray-50">
+    return (
+      <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-2xl font-bold">Product not found</h1>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">Product not found</div>
         </div>
         <Footer />
-      </div>;
+      </div>
+    );
   }
 
-  const selectedSizeData = product?.product_sizes?.find(s => String(s.id) === selectedSize);
-  const isCustomSize = selectedSizeData?.is_custom;
-  const galleryImages = product?.product_images?.filter((img: any) => img.image_type === 'gallery') || [];
+  const steps = [
+    { number: 1, title: "Choose Size & Quantity" },
+    { number: 2, title: "Custom Dimensions" },
+    { number: 3, title: "Upload Artwork" },
+    { number: 4, title: "Review & Checkout" }
+  ];
 
-  const stepTitles = {
-    1: "Choose Size",
-    2: "Select Quantity", 
-    3: "Upload Artwork",
-    4: "Complete Order"
-  };
-
-  return <div className="min-h-screen bg-gray-50">
+  return (
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Images Section */}
-          <div className="space-y-4">
-            {/* Main Feature Image */}
-            <div className="aspect-square bg-white rounded-xl shadow-lg overflow-hidden">
-              {mainImage ? <img src={mainImage} alt={product?.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
-                  <div className="text-center">
-                    <Upload className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p>No Image Available</p>
-                  </div>
-                </div>}
-            </div>
-
-            {/* Gallery Thumbnails */}
-            {galleryImages.length > 0 && <div className="flex gap-3 overflow-x-auto pb-2">
-                {product?.feature_image_url && <button onClick={() => setMainImage(product.feature_image_url || '')} className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${mainImage === product.feature_image_url ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}>
-                    <img src={product.feature_image_url} alt="Feature" className="w-full h-full object-cover" />
-                  </button>}
-                {galleryImages.map((image: any) => <button key={image.id} onClick={() => setMainImage(image.image_url || '')} className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${mainImage === image.image_url ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}>
-                    <img src={image.image_url} alt={image.alt_text || 'Gallery image'} className="w-full h-full object-cover" />
-                  </button>)}
-              </div>}
+      <div className="flex-1 bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Breadcrumb */}
+          <div className="mb-6">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/products')}
+              className="p-0 h-auto"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Products
+            </Button>
           </div>
 
-          {/* Product Details & Purchase Flow */}
-          <div className="space-y-8">
-            {/* Product Info */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">{product?.name}</h1>
-              <p className="text-gray-600 text-lg leading-relaxed">{product?.description}</p>
-            </div>
-
-            {/* Enhanced Step Progress Indicator */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <div className="flex items-center justify-between mb-8">
-                {[1, 2, 3, 4].map(step => <div key={step} className="flex items-center">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${step <= currentStep ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg transform scale-110' : 'bg-gray-200 text-gray-500'}`}>
-                      {step}
-                    </div>
-                    {step < 4 && <div className={`w-16 h-1 mx-2 rounded-full transition-all duration-500 ${step < currentStep ? 'bg-gradient-to-r from-orange-500 to-orange-600' : 'bg-gray-200'}`} />}
-                  </div>)}
+          {/* Product Header */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="md:w-1/3">
+                {product.feature_image_url && (
+                  <img
+                    src={product.feature_image_url}
+                    alt={product.name}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                )}
               </div>
-              <h2 className="text-2xl font-semibold text-center text-gray-900">
-                {stepTitles[currentStep as keyof typeof stepTitles]}
-              </h2>
+              <div className="md:w-2/3">
+                <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+                {product.description && (
+                  <p className="text-gray-600 mb-4">{product.description}</p>
+                )}
+                <div className="text-2xl font-bold text-orange-600">
+                  Starting at ${product.base_price}
+                </div>
+              </div>
             </div>
+          </div>
 
-            {/* Step Content */}
-            <Card className="shadow-lg overflow-hidden">
-              <CardContent className="p-8">
-                {/* Step 1: Choose Size */}
-                {currentStep === 1 && <div className="space-y-6">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {product?.product_sizes?.map(size => <Button key={size.id} variant={selectedSize === String(size.id) ? "default" : "outline"} className={`p-4 h-auto border-2 transition-all duration-200 ${selectedSize === String(size.id) ? 'bg-orange-600 hover:bg-orange-700 border-orange-600 shadow-lg transform scale-105' : 'border-gray-200 hover:border-orange-300 hover:shadow-md'}`} onClick={() => setSelectedSize(String(size.id))}>
-                          <div className="text-center">
-                            <div className="font-semibold">{size.size_name}</div>
-                            {!size.is_custom}
-                            <div className="text-sm font-bold mt-2">${size.price_per_unit}/ea</div>
-                          </div>
-                        </Button>)}
+          {/* Progress Steps */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              {steps.map((step, index) => (
+                <div key={step.number} className="flex items-center">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                    currentStep >= step.number
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {step.number}
+                  </div>
+                  <div className="ml-2 hidden sm:block">
+                    <div className={`text-sm font-medium ${
+                      currentStep >= step.number ? 'text-orange-600' : 'text-gray-500'
+                    }`}>
+                      {step.title}
                     </div>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`w-8 h-1 mx-4 ${
+                      currentStep > step.number ? 'bg-orange-600' : 'bg-gray-200'
+                    }`} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
 
-                    {isCustomSize && selectedSize && <div className="grid grid-cols-2 gap-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
-                        <div>
-                          <Label htmlFor="width" className="text-sm font-medium">Width (inches)</Label>
-                          <Input id="width" type="number" step="0.1" min="0.5" max="12" value={customWidth} onChange={e => setCustomWidth(e.target.value)} placeholder="Width" className="mt-1" />
-                        </div>
-                        <div>
-                          <Label htmlFor="height" className="text-sm font-medium">Height (inches)</Label>
-                          <Input id="height" type="number" step="0.1" min="0.5" max="12" value={customHeight} onChange={e => setCustomHeight(e.target.value)} placeholder="Height" className="mt-1" />
-                        </div>
-                      </div>}
-                  </div>}
-
-                {/* Step 2: Select Quantity */}
-                {currentStep === 2 && <div className="space-y-6">
-                    <div className="text-center">
-                      <Label className="text-lg font-semibold mb-4 block">Select Quantity</Label>
-                      <div className="flex items-center justify-center gap-4 mb-6">
-                        <Button variant="outline" size="icon" onClick={() => handleQuantityChange(-100)} className="h-12 w-12">
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <div className="text-center">
-                          <Input type="number" value={quantity.toString()} onChange={e => setQuantity(Math.max(50, parseInt(e.target.value) || 50))} className="text-center text-xl font-bold w-32 h-12" min="50" />
-                          <div className="text-sm text-gray-500 mt-1">pieces</div>
-                        </div>
-                        <Button variant="outline" size="icon" onClick={() => handleQuantityChange(100)} className="h-12 w-12">
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-6 text-center">
-                      <div className="text-sm text-gray-600 mb-2">Total Price</div>
-                      <div className="text-3xl font-bold text-orange-600">${calculateTotal()}</div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        ${selectedSizeData?.price_per_unit}/each × {quantity} pieces
-                      </div>
-                    </div>
-                  </div>}
-
-                {/* Step 3: Upload Artwork */}
-                {currentStep === 3 && <div className="space-y-6">
-                    <div className="text-center">
-                      <Label className="text-lg font-semibold mb-4 block">Upload Your Artwork</Label>
-                      {!artwork ? <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="w-12 h-12 mb-4 text-gray-400" />
-                            <p className="mb-2 text-lg text-gray-600">
-                              <span className="font-semibold">Click to upload</span> your artwork
-                            </p>
-                            <p className="text-sm text-gray-500">PNG, JPG, PDF (MAX. 50MB)</p>
-                            {isUploading && <p className="text-sm text-orange-600 mt-2">Uploading...</p>}
-                          </div>
-                          <input 
-                            type="file" 
-                            className="hidden" 
-                            accept="image/*,.pdf" 
-                            disabled={isUploading}
-                            onChange={e => {
-                              const file = e.target.files?.[0];
-                              if (file) handleFileUpload(file);
-                            }} 
-                          />
-                        </label> : <div className="space-y-4">
-                          <div className="p-6 bg-green-50 border-2 border-green-200 rounded-lg">
-                            <div className="flex items-center justify-center mb-4">
-                              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                                <Upload className="w-8 h-8 text-green-600" />
-                              </div>
+          {/* Step Content */}
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              {currentStep === 1 && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Select Size</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {sizes.map((size) => (
+                        <div
+                          key={size.id}
+                          onClick={() => handleSizeSelect(size)}
+                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                            checkoutState.selectedSize?.id === size.id
+                              ? 'border-orange-600 bg-orange-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="font-medium">{size.size_name}</div>
+                          {size.width && size.height && (
+                            <div className="text-sm text-gray-500">
+                              {size.width}" × {size.height}"
                             </div>
-                            <p className="text-green-700 font-semibold text-lg">
-                              ✓ {artwork.name}
-                            </p>
-                            <p className="text-green-600 text-sm mt-1">
-                              File size: {(artwork.size / (1024 * 1024)).toFixed(2)} MB
-                            </p>
-                            <p className="text-green-600 text-sm">
-                              Uploaded to cloud storage successfully
-                            </p>
+                          )}
+                          <div className="text-lg font-bold text-orange-600 mt-2">
+                            ${size.price_per_unit}
+                            {size.is_custom && " per sq ft"}
                           </div>
-                          <Button 
-                            variant="outline" 
-                            onClick={() => {
-                              setArtwork(null);
-                              sessionStorage.removeItem('artworkUrl');
-                            }} 
-                            className="w-full"
-                            disabled={isUploading}
-                          >
-                            Upload Different File
-                          </Button>
-                        </div>}
+                          {size.is_custom && (
+                            <Badge variant="secondary" className="mt-2">
+                              Custom Size
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  </div>}
+                  </div>
 
-                {/* Step 4: Complete Order */}
-                {currentStep === 4 && <div className="space-y-6">
-                    <div className="text-center mb-6">
-                      <h3 className="text-2xl font-bold mb-2">Order Summary</h3>
-                      <p className="text-gray-600">Please review your order before proceeding</p>
+                  <div>
+                    <Label htmlFor="quantity">Quantity</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      min="1"
+                      value={checkoutState.quantity}
+                      onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                      className="w-24 mt-1"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={() => setCurrentStep(2)}
+                    disabled={!checkoutState.selectedSize}
+                    className="w-full bg-orange-600 hover:bg-orange-700"
+                  >
+                    Continue
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              )}
+
+              {currentStep === 2 && (
+                <div className="space-y-6">
+                  {checkoutState.selectedSize?.is_custom ? (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Enter Custom Dimensions</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="width">Width (inches)</Label>
+                          <Input
+                            id="width"
+                            type="number"
+                            min="1"
+                            step="0.1"
+                            value={checkoutState.customDimensions?.width || ''}
+                            onChange={(e) => handleCustomDimensions(
+                              parseFloat(e.target.value) || 0,
+                              checkoutState.customDimensions?.height || 0
+                            )}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="height">Height (inches)</Label>
+                          <Input
+                            id="height"
+                            type="number"
+                            min="1"
+                            step="0.1"
+                            value={checkoutState.customDimensions?.height || ''}
+                            onChange={(e) => handleCustomDimensions(
+                              checkoutState.customDimensions?.width || 0,
+                              parseFloat(e.target.value) || 0
+                            )}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                      {checkoutState.customDimensions?.width && checkoutState.customDimensions?.height && (
+                        <div className="mt-4 p-4 bg-orange-50 rounded-lg">
+                          <div className="text-sm text-gray-600">
+                            Area: {((checkoutState.customDimensions.width * checkoutState.customDimensions.height) / 144).toFixed(2)} sq ft
+                          </div>
+                          <div className="text-lg font-bold text-orange-600">
+                            Price: ${(checkoutState.selectedSize.price_per_unit * ((checkoutState.customDimensions.width * checkoutState.customDimensions.height) / 144)).toFixed(2)}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                        <span className="font-medium">Product:</span>
-                        <span className="text-right">{product?.name}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                        <span className="font-medium">Size:</span>
-                        <span className="text-right">{selectedSizeData?.size_name}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                        <span className="font-medium">Quantity:</span>
-                        <span className="text-right">{quantity} pieces</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                        <span className="font-medium">Unit Price:</span>
-                        <span className="text-right">${selectedSizeData?.price_per_unit}/each</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                        <span className="font-medium">Artwork:</span>
-                        <span className="text-right text-sm">{artwork?.name}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-3 text-xl font-bold text-orange-600">
-                        <span>Total:</span>
-                        <span>${calculateTotal()}</span>
+                  ) : (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Size Confirmed</h3>
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <div className="font-medium">{checkoutState.selectedSize?.size_name}</div>
+                        <div className="text-sm text-gray-500">
+                          {checkoutState.selectedSize?.width}" × {checkoutState.selectedSize?.height}"
+                        </div>
                       </div>
                     </div>
-                    
-                    <Button size="lg" className="w-full bg-orange-600 hover:bg-orange-700 text-lg py-6" onClick={handleStartOrder}>
-                      Proceed to Checkout
+                  )}
+
+                  <div className="flex gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentStep(1)}
+                      className="flex-1"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back
                     </Button>
-                  </div>}
+                    <Button
+                      onClick={() => setCurrentStep(3)}
+                      disabled={checkoutState.selectedSize?.is_custom && (!checkoutState.customDimensions?.width || !checkoutState.customDimensions?.height)}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700"
+                    >
+                      Continue
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
 
-                {/* Navigation Buttons */}
-                <div className="flex justify-between mt-8 pt-6 border-t">
-                  <Button variant="outline" onClick={prevStep} disabled={currentStep === 1} className="flex items-center gap-2">
-                    <ChevronLeft className="w-4 h-4" />
+              {currentStep === 3 && (
+                <div className="space-y-6">
+                  <ArtworkUploadSection
+                    onArtworkChange={handleArtworkChange}
+                    onEmailOptionChange={handleEmailOptionChange}
+                    onNext={() => setCurrentStep(4)}
+                    selectedFile={checkoutState.artworkFile}
+                    emailOption={checkoutState.artworkViaEmail}
+                  />
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep(2)}
+                    className="w-full"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
                     Back
                   </Button>
-                  {currentStep < 4 && <Button onClick={nextStep} className="bg-orange-600 hover:bg-orange-700 flex items-center gap-2">
-                      Next
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+
+              {currentStep === 4 && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold">Review Your Order</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <h4 className="font-medium mb-2">Product Details</h4>
+                      <div className="text-sm space-y-1">
+                        <div>Product: {product.name}</div>
+                        <div>Size: {checkoutState.selectedSize?.size_name}</div>
+                        {checkoutState.customDimensions && (
+                          <div>
+                            Dimensions: {checkoutState.customDimensions.width}" × {checkoutState.customDimensions.height}"
+                          </div>
+                        )}
+                        <div>Quantity: {checkoutState.quantity}</div>
+                        <div>
+                          Artwork: {checkoutState.artworkViaEmail 
+                            ? "Will be sent via email to luvstickers3@gmail.com" 
+                            : checkoutState.artworkFile?.name || "No file selected"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-orange-50 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Total:</span>
+                        <span className="text-2xl font-bold text-orange-600">
+                          ${calculateTotal().toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentStep(3)}
+                      className="flex-1"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back
+                    </Button>
+                    <Button
+                      onClick={proceedToCheckout}
+                      className="flex-1 bg-orange-600 hover:bg-orange-700"
+                    >
+                      Proceed to Checkout
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
       <Footer />
-    </div>;
+    </div>
+  );
 };
 
 export default ProductDetail;

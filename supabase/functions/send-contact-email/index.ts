@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -25,6 +26,29 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { name, email, subject, message }: ContactFormData = await req.json();
+
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Store the contact form submission as a lead
+    const { error: leadError } = await supabase
+      .from('leads')
+      .insert({
+        name,
+        email,
+        subject,
+        message
+      });
+
+    if (leadError) {
+      console.error("Error storing lead:", leadError);
+      // Continue with email sending even if lead storage fails
+    } else {
+      console.log("Lead stored successfully");
+    }
 
     // Send email to luvstickers3@gmail.com
     const emailResponse = await resend.emails.send({
