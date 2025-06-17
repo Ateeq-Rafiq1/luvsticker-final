@@ -78,12 +78,13 @@ const Contact = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Phone className="w-5 h-5 mr-2 text-orange-600" />
-                    Call Us
+                    <Mail className="w-5 h-5 mr-2 text-orange-600" />
+                    Address
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600">1-800-STICKERS</p>
+                  <p className="text-gray-600">10972 S GLENDA LANE SOUTH JORDAN, UT 84095-4852
+</p>
                 </CardContent>
               </Card>
 
