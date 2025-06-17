@@ -78,7 +78,7 @@ const Contact = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Mail className="w-5 h-5 mr-2 text-orange-600" />
+                    <MapPin className="w-5 h-5 mr-2 text-orange-600" />
                     Address
                   </CardTitle>
                 </CardHeader>
