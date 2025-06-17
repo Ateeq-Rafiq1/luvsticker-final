@@ -21,6 +21,7 @@ interface ProductFormData {
 }
 
 interface ProductSize {
+  id?: string;
   size_name: string;
   width: number | null;
   height: number | null;
@@ -76,7 +77,13 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       // Insert sizes
       if (sizes.length > 0) {
         const sizesWithProductId = sizes.map(size => ({
-          ...size,
+          size_name: size.size_name,
+          width: size.width,
+          height: size.height,
+          price_per_unit: size.price_per_unit,
+          is_custom: size.is_custom,
+          min_quantity: size.min_quantity,
+          max_quantity: size.max_quantity,
           product_id: productData.id
         }));
         
@@ -129,15 +136,32 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       
       if (error) throw error;
       
-      // Delete existing sizes and insert new ones
-      await supabase
+      // Get existing sizes
+      const { data: existingSizes } = await supabase
         .from('product_sizes')
-        .delete()
+        .select('id')
         .eq('product_id', product.id);
       
+      // Delete existing sizes
+      if (existingSizes && existingSizes.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('product_sizes')
+          .delete()
+          .eq('product_id', product.id);
+        
+        if (deleteError) throw deleteError;
+      }
+      
+      // Insert new sizes (without IDs to avoid conflicts)
       if (sizes.length > 0) {
         const sizesWithProductId = sizes.map(size => ({
-          ...size,
+          size_name: size.size_name,
+          width: size.width,
+          height: size.height,
+          price_per_unit: size.price_per_unit,
+          is_custom: size.is_custom,
+          min_quantity: size.min_quantity,
+          max_quantity: size.max_quantity,
           product_id: product.id
         }));
         
