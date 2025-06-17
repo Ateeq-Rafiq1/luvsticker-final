@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
-import { X } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
 
 interface ProductFormData {
@@ -29,6 +29,8 @@ interface ProductSize {
   is_custom: boolean;
   min_quantity: number;
   max_quantity: number;
+  is_active?: boolean;
+  has_orders?: boolean;
 }
 
 interface ProductFormProps {
@@ -46,7 +48,8 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       price_per_unit: 0, 
       is_custom: false,
       min_quantity: 1,
-      max_quantity: 100
+      max_quantity: 100,
+      is_active: true
     }]
   );
   const [galleryImages, setGalleryImages] = useState<string[]>(
@@ -62,6 +65,19 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       feature_image_url: product?.feature_image_url || "",
     }
   });
+
+  // Check which sizes have orders (for edit mode)
+  const checkSizeOrders = async (sizeIds: string[]) => {
+    if (sizeIds.length === 0) return {};
+    
+    const { data: ordersWithSizes } = await supabase
+      .from('orders')
+      .select('size_id')
+      .in('size_id', sizeIds);
+    
+    const sizesWithOrders = new Set(ordersWithSizes?.map(order => order.size_id) || []);
+    return Object.fromEntries(sizeIds.map(id => [id, sizesWithOrders.has(id)]));
+  };
 
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
@@ -139,37 +155,91 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       // Get existing sizes
       const { data: existingSizes } = await supabase
         .from('product_sizes')
-        .select('id')
+        .select('id, size_name, width, height, price_per_unit, is_custom, min_quantity, max_quantity')
         .eq('product_id', product.id);
       
-      // Delete existing sizes
-      if (existingSizes && existingSizes.length > 0) {
+      // Check which existing sizes have orders
+      const existingSizeIds = existingSizes?.map(size => size.id) || [];
+      const sizesWithOrders = await checkSizeOrders(existingSizeIds);
+      
+      // Categorize sizes
+      const sizesToUpdate: any[] = [];
+      const sizesToInsert: any[] = [];
+      const sizesToDelete: string[] = [];
+      
+      // Process current form sizes
+      sizes.forEach(formSize => {
+        if (formSize.id && existingSizes?.find(es => es.id === formSize.id)) {
+          // Existing size - update it
+          sizesToUpdate.push({
+            id: formSize.id,
+            size_name: formSize.size_name,
+            width: formSize.width,
+            height: formSize.height,
+            price_per_unit: formSize.price_per_unit,
+            is_custom: formSize.is_custom,
+            min_quantity: formSize.min_quantity,
+            max_quantity: formSize.max_quantity
+          });
+        } else {
+          // New size - insert it
+          sizesToInsert.push({
+            size_name: formSize.size_name,
+            width: formSize.width,
+            height: formSize.height,
+            price_per_unit: formSize.price_per_unit,
+            is_custom: formSize.is_custom,
+            min_quantity: formSize.min_quantity,
+            max_quantity: formSize.max_quantity,
+            product_id: product.id
+          });
+        }
+      });
+      
+      // Find sizes to delete (existing sizes not in current form)
+      const currentSizeIds = sizes.filter(s => s.id).map(s => s.id);
+      existingSizes?.forEach(existingSize => {
+        if (!currentSizeIds.includes(existingSize.id)) {
+          if (!sizesWithOrders[existingSize.id]) {
+            sizesToDelete.push(existingSize.id);
+          } else {
+            // Size has orders, show warning but don't delete
+            toast({
+              title: "Warning",
+              description: `Size "${existingSize.size_name}" has existing orders and cannot be deleted.`,
+              variant: "destructive"
+            });
+          }
+        }
+      });
+      
+      // Execute updates
+      for (const sizeUpdate of sizesToUpdate) {
+        const { error: updateError } = await supabase
+          .from('product_sizes')
+          .update(sizeUpdate)
+          .eq('id', sizeUpdate.id);
+        
+        if (updateError) throw updateError;
+      }
+      
+      // Execute inserts
+      if (sizesToInsert.length > 0) {
+        const { error: insertError } = await supabase
+          .from('product_sizes')
+          .insert(sizesToInsert);
+        
+        if (insertError) throw insertError;
+      }
+      
+      // Execute deletes (only for sizes without orders)
+      if (sizesToDelete.length > 0) {
         const { error: deleteError } = await supabase
           .from('product_sizes')
           .delete()
-          .eq('product_id', product.id);
+          .in('id', sizesToDelete);
         
         if (deleteError) throw deleteError;
-      }
-      
-      // Insert new sizes (without IDs to avoid conflicts)
-      if (sizes.length > 0) {
-        const sizesWithProductId = sizes.map(size => ({
-          size_name: size.size_name,
-          width: size.width,
-          height: size.height,
-          price_per_unit: size.price_per_unit,
-          is_custom: size.is_custom,
-          min_quantity: size.min_quantity,
-          max_quantity: size.max_quantity,
-          product_id: product.id
-        }));
-        
-        const { error: sizesError } = await supabase
-          .from('product_sizes')
-          .insert(sizesWithProductId);
-        
-        if (sizesError) throw sizesError;
       }
 
       // Handle gallery images
@@ -226,12 +296,25 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       price_per_unit: 0, 
       is_custom: false,
       min_quantity: 1,
-      max_quantity: 100
+      max_quantity: 100,
+      is_active: true
     }]);
   };
 
   const removeSize = (index: number) => {
+    const sizeToRemove = sizes[index];
+    
+    // If it's an existing size with an ID, we'll handle it in the update mutation
+    // For now, just remove it from the form state
     setSizes(sizes.filter((_, i) => i !== index));
+    
+    // Show warning if removing an existing size
+    if (sizeToRemove.id && product) {
+      toast({
+        title: "Size removed from form",
+        description: "The size will be checked for existing orders when you save. If it has orders, it won't be deleted.",
+      });
+    }
   };
 
   const updateSize = (index: number, field: keyof ProductSize, value: any) => {
@@ -368,7 +451,15 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
                 {sizes.map((size, index) => (
                   <div key={index} className="border p-4 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">Size {index + 1}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">Size {index + 1}</h4>
+                        {size.id && size.has_orders && (
+                          <div className="flex items-center gap-1 text-amber-600 text-xs">
+                            <AlertTriangle className="w-3 h-3" />
+                            Has orders
+                          </div>
+                        )}
+                      </div>
                       {sizes.length > 1 && (
                         <Button
                           type="button"
