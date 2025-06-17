@@ -215,6 +215,8 @@ export type Database = {
           height: number | null
           id: string
           is_custom: boolean | null
+          max_quantity: number | null
+          min_quantity: number | null
           price_per_unit: number
           product_id: string | null
           size_name: string
@@ -225,6 +227,8 @@ export type Database = {
           height?: number | null
           id?: string
           is_custom?: boolean | null
+          max_quantity?: number | null
+          min_quantity?: number | null
           price_per_unit: number
           product_id?: string | null
           size_name: string
@@ -235,6 +239,8 @@ export type Database = {
           height?: number | null
           id?: string
           is_custom?: boolean | null
+          max_quantity?: number | null
+          min_quantity?: number | null
           price_per_unit?: number
           product_id?: string | null
           size_name?: string

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,6 +26,8 @@ interface ProductSize {
   height: number | null;
   price_per_unit: number;
   is_custom: boolean;
+  min_quantity: number;
+  max_quantity: number;
 }
 
 interface ProductFormProps {
@@ -37,7 +38,15 @@ interface ProductFormProps {
 const ProductForm = ({ onClose, product }: ProductFormProps) => {
   const queryClient = useQueryClient();
   const [sizes, setSizes] = useState<ProductSize[]>(
-    product?.product_sizes || [{ size_name: "", width: null, height: null, price_per_unit: 0, is_custom: false }]
+    product?.product_sizes || [{ 
+      size_name: "", 
+      width: null, 
+      height: null, 
+      price_per_unit: 0, 
+      is_custom: false,
+      min_quantity: 1,
+      max_quantity: 100
+    }]
   );
   const [galleryImages, setGalleryImages] = useState<string[]>(
     product?.product_images?.filter((img: any) => img.image_type === 'gallery').map((img: any) => img.image_url) || []
@@ -186,7 +195,15 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
   };
 
   const addSize = () => {
-    setSizes([...sizes, { size_name: "", width: null, height: null, price_per_unit: 0, is_custom: false }]);
+    setSizes([...sizes, { 
+      size_name: "", 
+      width: null, 
+      height: null, 
+      price_per_unit: 0, 
+      is_custom: false,
+      min_quantity: 1,
+      max_quantity: 100
+    }]);
   };
 
   const removeSize = (index: number) => {
@@ -379,6 +396,26 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
                           value={size.height || ''}
                           onChange={(e) => updateSize(index, 'height', e.target.value ? parseFloat(e.target.value) : null)}
                           disabled={size.is_custom}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Min Quantity</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={size.min_quantity}
+                          onChange={(e) => updateSize(index, 'min_quantity', parseInt(e.target.value) || 1)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Max Quantity</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={size.max_quantity}
+                          onChange={(e) => updateSize(index, 'max_quantity', parseInt(e.target.value) || 100)}
                           className="mt-1"
                         />
                       </div>

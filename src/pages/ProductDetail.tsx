@@ -10,9 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import ArtworkUploadSection from "@/components/ArtworkUploadSection";
-import { useCheckoutState } from "@/hooks/useCheckoutState";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -22,7 +21,12 @@ const ProductDetail = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   
-  const { checkoutState, updateCheckoutState } = useCheckoutState();
+  // State for product configuration
+  const [selectedSize, setSelectedSize] = useState<any>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [customDimensions, setCustomDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [artworkFile, setArtworkFile] = useState<File | null>(null);
+  const [artworkViaEmail, setArtworkViaEmail] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -69,48 +73,64 @@ const ProductDetail = () => {
   };
 
   const handleSizeSelect = (size: any) => {
-    updateCheckoutState({ selectedSize: size });
+    setSelectedSize(size);
+    setQuantity(size.min_quantity || 1);
+    setCustomDimensions(null);
   };
 
-  const handleQuantityChange = (quantity: number) => {
-    updateCheckoutState({ quantity });
+  const handleQuantityChange = (newQuantity: number) => {
+    if (selectedSize) {
+      const min = selectedSize.min_quantity || 1;
+      const max = selectedSize.max_quantity || 100;
+      if (newQuantity >= min && newQuantity <= max) {
+        setQuantity(newQuantity);
+      }
+    }
   };
 
   const handleCustomDimensions = (width: number, height: number) => {
-    updateCheckoutState({ customDimensions: { width, height } });
-  };
-
-  const handleArtworkChange = (file: File | null) => {
-    updateCheckoutState({ artworkFile: file });
-  };
-
-  const handleEmailOptionChange = (useEmail: boolean) => {
-    updateCheckoutState({ artworkViaEmail: useEmail });
+    setCustomDimensions({ width, height });
   };
 
   const calculateTotal = () => {
-    if (!checkoutState.selectedSize) return 0;
+    if (!selectedSize) return 0;
     
-    let basePrice = checkoutState.selectedSize.price_per_unit;
-    if (checkoutState.customDimensions) {
-      const { width, height } = checkoutState.customDimensions;
+    let basePrice = selectedSize.price_per_unit;
+    if (customDimensions && selectedSize.is_custom) {
+      const { width, height } = customDimensions;
       const area = (width * height) / 144; // Convert to square feet
       basePrice = basePrice * area;
     }
     
-    return basePrice * checkoutState.quantity;
+    return basePrice * quantity;
   };
 
   const proceedToCheckout = () => {
-    // Store checkout state in sessionStorage for the checkout page
-    sessionStorage.setItem('checkoutState', JSON.stringify({
-      ...checkoutState,
+    // Store checkout data in sessionStorage for the checkout page
+    sessionStorage.setItem('orderData', JSON.stringify({
       productId: id,
       productName: product.name,
-      total: calculateTotal()
+      sizeId: selectedSize.id,
+      sizeName: selectedSize.size_name,
+      quantity: quantity,
+      customWidth: customDimensions?.width || null,
+      customHeight: customDimensions?.height || null,
+      total: calculateTotal().toFixed(2),
+      artwork_via_email: artworkViaEmail
     }));
     
-    navigate('/checkout');
+    // Store artwork file data separately if exists
+    if (artworkFile) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        sessionStorage.setItem('orderArtwork', e.target?.result as string);
+        sessionStorage.setItem('orderArtworkName', artworkFile.name);
+        navigate('/checkout');
+      };
+      reader.readAsDataURL(artworkFile);
+    } else {
+      navigate('/checkout');
+    }
   };
 
   if (loading) {
@@ -139,9 +159,8 @@ const ProductDetail = () => {
 
   const steps = [
     { number: 1, title: "Choose Size & Quantity" },
-    { number: 2, title: "Custom Dimensions" },
-    { number: 3, title: "Upload Artwork" },
-    { number: 4, title: "Review & Checkout" }
+    { number: 2, title: "Upload Artwork" },
+    { number: 3, title: "Review & Checkout" }
   ];
 
   return (
@@ -227,7 +246,7 @@ const ProductDetail = () => {
                           key={size.id}
                           onClick={() => handleSizeSelect(size)}
                           className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                            checkoutState.selectedSize?.id === size.id
+                            selectedSize?.id === size.id
                               ? 'border-orange-600 bg-orange-50'
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
@@ -242,6 +261,9 @@ const ProductDetail = () => {
                             ${size.price_per_unit}
                             {size.is_custom && " per sq ft"}
                           </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Qty: {size.min_quantity}-{size.max_quantity}
+                          </div>
                           {size.is_custom && (
                             <Badge variant="secondary" className="mt-2">
                               Custom Size
@@ -252,32 +274,7 @@ const ProductDetail = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="quantity">Quantity</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      min="1"
-                      value={checkoutState.quantity}
-                      onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-                      className="w-24 mt-1"
-                    />
-                  </div>
-
-                  <Button
-                    onClick={() => setCurrentStep(2)}
-                    disabled={!checkoutState.selectedSize}
-                    className="w-full bg-orange-600 hover:bg-orange-700"
-                  >
-                    Continue
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              )}
-
-              {currentStep === 2 && (
-                <div className="space-y-6">
-                  {checkoutState.selectedSize?.is_custom ? (
+                  {selectedSize?.is_custom && (
                     <div>
                       <h3 className="text-lg font-semibold mb-4">Enter Custom Dimensions</h3>
                       <div className="grid grid-cols-2 gap-4">
@@ -288,10 +285,10 @@ const ProductDetail = () => {
                             type="number"
                             min="1"
                             step="0.1"
-                            value={checkoutState.customDimensions?.width || ''}
+                            value={customDimensions?.width || ''}
                             onChange={(e) => handleCustomDimensions(
                               parseFloat(e.target.value) || 0,
-                              checkoutState.customDimensions?.height || 0
+                              customDimensions?.height || 0
                             )}
                             className="mt-1"
                           />
@@ -303,72 +300,72 @@ const ProductDetail = () => {
                             type="number"
                             min="1"
                             step="0.1"
-                            value={checkoutState.customDimensions?.height || ''}
+                            value={customDimensions?.height || ''}
                             onChange={(e) => handleCustomDimensions(
-                              checkoutState.customDimensions?.width || 0,
+                              customDimensions?.width || 0,
                               parseFloat(e.target.value) || 0
                             )}
                             className="mt-1"
                           />
                         </div>
                       </div>
-                      {checkoutState.customDimensions?.width && checkoutState.customDimensions?.height && (
+                      {customDimensions?.width && customDimensions?.height && (
                         <div className="mt-4 p-4 bg-orange-50 rounded-lg">
                           <div className="text-sm text-gray-600">
-                            Area: {((checkoutState.customDimensions.width * checkoutState.customDimensions.height) / 144).toFixed(2)} sq ft
+                            Area: {((customDimensions.width * customDimensions.height) / 144).toFixed(2)} sq ft
                           </div>
                           <div className="text-lg font-bold text-orange-600">
-                            Price: ${(checkoutState.selectedSize.price_per_unit * ((checkoutState.customDimensions.width * checkoutState.customDimensions.height) / 144)).toFixed(2)}
+                            Price: ${(selectedSize.price_per_unit * ((customDimensions.width * customDimensions.height) / 144)).toFixed(2)}
                           </div>
                         </div>
                       )}
                     </div>
-                  ) : (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Size Confirmed</h3>
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <div className="font-medium">{checkoutState.selectedSize?.size_name}</div>
-                        <div className="text-sm text-gray-500">
-                          {checkoutState.selectedSize?.width}" × {checkoutState.selectedSize?.height}"
-                        </div>
-                      </div>
-                    </div>
                   )}
 
-                  <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setCurrentStep(1)}
-                      className="flex-1"
-                    >
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Back
-                    </Button>
-                    <Button
-                      onClick={() => setCurrentStep(3)}
-                      disabled={checkoutState.selectedSize?.is_custom && (!checkoutState.customDimensions?.width || !checkoutState.customDimensions?.height)}
-                      className="flex-1 bg-orange-600 hover:bg-orange-700"
-                    >
-                      Continue
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
+                  <div>
+                    <Label htmlFor="quantity">Quantity</Label>
+                    <div className="flex items-center gap-4 mt-1">
+                      <Input
+                        id="quantity"
+                        type="number"
+                        min={selectedSize?.min_quantity || 1}
+                        max={selectedSize?.max_quantity || 100}
+                        value={quantity}
+                        onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                        className="w-24"
+                      />
+                      {selectedSize && (
+                        <span className="text-sm text-gray-500">
+                          Min: {selectedSize.min_quantity}, Max: {selectedSize.max_quantity}
+                        </span>
+                      )}
+                    </div>
                   </div>
+
+                  <Button
+                    onClick={() => setCurrentStep(2)}
+                    disabled={!selectedSize || (selectedSize.is_custom && (!customDimensions?.width || !customDimensions?.height))}
+                    className="w-full bg-orange-600 hover:bg-orange-700"
+                  >
+                    Continue
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
                 </div>
               )}
 
-              {currentStep === 3 && (
+              {currentStep === 2 && (
                 <div className="space-y-6">
                   <ArtworkUploadSection
-                    onArtworkChange={handleArtworkChange}
-                    onEmailOptionChange={handleEmailOptionChange}
-                    onNext={() => setCurrentStep(4)}
-                    selectedFile={checkoutState.artworkFile}
-                    emailOption={checkoutState.artworkViaEmail}
+                    onArtworkChange={setArtworkFile}
+                    onEmailOptionChange={setArtworkViaEmail}
+                    onNext={() => setCurrentStep(3)}
+                    selectedFile={artworkFile}
+                    emailOption={artworkViaEmail}
                   />
                   
                   <Button
                     variant="outline"
-                    onClick={() => setCurrentStep(2)}
+                    onClick={() => setCurrentStep(1)}
                     className="w-full"
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
@@ -377,7 +374,7 @@ const ProductDetail = () => {
                 </div>
               )}
 
-              {currentStep === 4 && (
+              {currentStep === 3 && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-semibold">Review Your Order</h3>
                   
@@ -386,17 +383,17 @@ const ProductDetail = () => {
                       <h4 className="font-medium mb-2">Product Details</h4>
                       <div className="text-sm space-y-1">
                         <div>Product: {product.name}</div>
-                        <div>Size: {checkoutState.selectedSize?.size_name}</div>
-                        {checkoutState.customDimensions && (
+                        <div>Size: {selectedSize?.size_name}</div>
+                        {customDimensions && (
                           <div>
-                            Dimensions: {checkoutState.customDimensions.width}" × {checkoutState.customDimensions.height}"
+                            Dimensions: {customDimensions.width}" × {customDimensions.height}"
                           </div>
                         )}
-                        <div>Quantity: {checkoutState.quantity}</div>
+                        <div>Quantity: {quantity}</div>
                         <div>
-                          Artwork: {checkoutState.artworkViaEmail 
+                          Artwork: {artworkViaEmail 
                             ? "Will be sent via email to luvstickers3@gmail.com" 
-                            : checkoutState.artworkFile?.name || "No file selected"}
+                            : artworkFile?.name || "No file selected"}
                         </div>
                       </div>
                     </div>
@@ -414,7 +411,7 @@ const ProductDetail = () => {
                   <div className="flex gap-4">
                     <Button
                       variant="outline"
-                      onClick={() => setCurrentStep(3)}
+                      onClick={() => setCurrentStep(2)}
                       className="flex-1"
                     >
                       <ArrowLeft className="w-4 h-4 mr-2" />

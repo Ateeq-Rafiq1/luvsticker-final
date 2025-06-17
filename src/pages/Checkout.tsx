@@ -13,6 +13,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [orderData, setOrderData] = useState<any>(null);
+  const [artworkPreview, setArtworkPreview] = useState<string>("");
+  const [artworkName, setArtworkName] = useState<string>("");
+  
+  // Customer and delivery information
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
@@ -20,10 +26,6 @@ const Checkout = () => {
   const [deliveryState, setDeliveryState] = useState("");
   const [deliveryPostalCode, setDeliveryPostalCode] = useState("");
   const [deliveryCountry, setDeliveryCountry] = useState("United States");
-  const [isLoading, setIsLoading] = useState(false);
-  const [orderData, setOrderData] = useState<any>(null);
-  const [artworkPreview, setArtworkPreview] = useState<string>("");
-  const [artworkName, setArtworkName] = useState<string>("");
 
   useEffect(() => {
     const storedOrderData = sessionStorage.getItem('orderData');
@@ -83,6 +85,7 @@ const Checkout = () => {
           custom_height: orderData.customHeight,
           total_amount: parseFloat(orderData.total),
           artwork_url: artworkUrl,
+          artwork_via_email: orderData.artwork_via_email,
           status: 'pending',
           order_number: orderNumber
         })
@@ -134,7 +137,8 @@ const Checkout = () => {
   };
 
   if (!orderData) {
-    return <div className="min-h-screen">
+    return (
+      <div className="min-h-screen">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
@@ -143,7 +147,8 @@ const Checkout = () => {
           </div>
         </div>
         <Footer />
-      </div>;
+      </div>
+    );
   }
 
   return (
@@ -158,7 +163,7 @@ const Checkout = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Customer Information */}
           <Card className="shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 bg-orange-500">
+            <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100">
               <CardTitle className="text-xl text-orange-800">Customer & Delivery Information</CardTitle>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
@@ -250,13 +255,21 @@ const Checkout = () => {
             </CardContent>
           </Card>
 
-          {/* Enhanced Order Summary */}
+          {/* Order Summary */}
           <Card className="shadow-lg">
             <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100">
               <CardTitle className="text-xl text-orange-800">Order Summary</CardTitle>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
               <div className="space-y-4">
+                <div className="flex justify-between py-2">
+                  <span className="font-medium">Product:</span>
+                  <span>{orderData.productName}</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="font-medium">Size:</span>
+                  <span>{orderData.sizeName}</span>
+                </div>
                 <div className="flex justify-between py-2">
                   <span className="font-medium">Quantity:</span>
                   <span>{orderData.quantity} pieces</span>
@@ -282,6 +295,12 @@ const Checkout = () => {
                         />
                       </div>
                     )}
+                  </div>
+                )}
+                {orderData.artwork_via_email && (
+                  <div className="py-2">
+                    <span className="font-medium">Artwork:</span>
+                    <span className="text-sm text-gray-600 ml-2">Will be sent via email to luvstickers3@gmail.com</span>
                   </div>
                 )}
               </div>
