@@ -22,7 +22,10 @@ const AdminProducts = () => {
         .from('products')
         .select(`
           *,
-          product_sizes (*)
+          product_sizes (
+            *,
+            quantity_tiers (*)
+          )
         `)
         .order('created_at', { ascending: false });
       
@@ -186,9 +189,16 @@ const AdminProducts = () => {
                       <p className="text-sm font-medium mb-2">Available Sizes:</p>
                       <div className="flex flex-wrap gap-1">
                         {product.product_sizes.slice(0, 3).map((size: any) => (
-                          <Badge key={size.id} variant="outline" className="text-xs">
-                            {size.size_name} (${size.price_per_unit})
-                          </Badge>
+                          <div key={size.id} className="flex flex-col">
+                            <Badge variant="outline" className="text-xs">
+                              {size.size_name} (${size.price_per_unit})
+                            </Badge>
+                            {size.quantity_tiers && size.quantity_tiers.length > 0 && (
+                              <span className="text-xs text-green-600 mt-1">
+                                {size.quantity_tiers.length} tier{size.quantity_tiers.length > 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
                         ))}
                         {product.product_sizes.length > 3 && (
                           <Badge variant="outline" className="text-xs">

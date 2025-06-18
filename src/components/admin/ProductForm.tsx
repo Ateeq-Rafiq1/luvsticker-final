@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { X, AlertTriangle } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
+import QuantityTierManager from "./QuantityTierManager";
 
 interface ProductFormData {
   name: string;
@@ -31,6 +32,16 @@ interface ProductSize {
   max_quantity: number;
   is_active?: boolean;
   has_orders?: boolean;
+  quantity_tiers?: QuantityTier[];
+}
+
+interface QuantityTier {
+  id?: string;
+  min_quantity: number;
+  max_quantity: number | null;
+  price_per_unit: number;
+  discount_percentage: number;
+  display_order: number;
 }
 
 interface ProductFormProps {
@@ -41,7 +52,10 @@ interface ProductFormProps {
 const ProductForm = ({ onClose, product }: ProductFormProps) => {
   const queryClient = useQueryClient();
   const [sizes, setSizes] = useState<ProductSize[]>(
-    product?.product_sizes || [{ 
+    product?.product_sizes?.map((size: any) => ({
+      ...size,
+      quantity_tiers: size.quantity_tiers || []
+    })) || [{ 
       size_name: "", 
       width: null, 
       height: null, 
@@ -49,7 +63,8 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       is_custom: false,
       min_quantity: 1,
       max_quantity: 100,
-      is_active: true
+      is_active: true,
+      quantity_tiers: []
     }]
   );
   const [galleryImages, setGalleryImages] = useState<string[]>(
@@ -90,24 +105,42 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       
       if (error) throw error;
       
-      // Insert sizes
-      if (sizes.length > 0) {
-        const sizesWithProductId = sizes.map(size => ({
-          size_name: size.size_name,
-          width: size.width,
-          height: size.height,
-          price_per_unit: size.price_per_unit,
-          is_custom: size.is_custom,
-          min_quantity: size.min_quantity,
-          max_quantity: size.max_quantity,
-          product_id: productData.id
-        }));
-        
-        const { error: sizesError } = await supabase
+      // Insert sizes and their quantity tiers
+      for (const size of sizes) {
+        const { data: sizeData, error: sizeError } = await supabase
           .from('product_sizes')
-          .insert(sizesWithProductId);
+          .insert({
+            size_name: size.size_name,
+            width: size.width,
+            height: size.height,
+            price_per_unit: size.price_per_unit,
+            is_custom: size.is_custom,
+            min_quantity: size.min_quantity,
+            max_quantity: size.max_quantity,
+            product_id: productData.id
+          })
+          .select()
+          .single();
         
-        if (sizesError) throw sizesError;
+        if (sizeError) throw sizeError;
+        
+        // Insert quantity tiers for this size
+        if (size.quantity_tiers && size.quantity_tiers.length > 0) {
+          const tierData = size.quantity_tiers.map(tier => ({
+            size_id: sizeData.id,
+            min_quantity: tier.min_quantity,
+            max_quantity: tier.max_quantity,
+            price_per_unit: tier.price_per_unit,
+            discount_percentage: tier.discount_percentage,
+            display_order: tier.display_order
+          }));
+          
+          const { error: tiersError } = await supabase
+            .from('quantity_tiers')
+            .insert(tierData);
+          
+          if (tiersError) throw tiersError;
+        }
       }
       
       // Insert gallery images
@@ -152,94 +185,70 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       
       if (error) throw error;
       
-      // Get existing sizes
-      const { data: existingSizes } = await supabase
-        .from('product_sizes')
-        .select('id, size_name, width, height, price_per_unit, is_custom, min_quantity, max_quantity')
-        .eq('product_id', product.id);
-      
-      // Check which existing sizes have orders
-      const existingSizeIds = existingSizes?.map(size => size.id) || [];
-      const sizesWithOrders = await checkSizeOrders(existingSizeIds);
-      
-      // Categorize sizes
-      const sizesToUpdate: any[] = [];
-      const sizesToInsert: any[] = [];
-      const sizesToDelete: string[] = [];
-      
-      // Process current form sizes
-      sizes.forEach(formSize => {
-        if (formSize.id && existingSizes?.find(es => es.id === formSize.id)) {
-          // Existing size - update it
-          sizesToUpdate.push({
-            id: formSize.id,
-            size_name: formSize.size_name,
-            width: formSize.width,
-            height: formSize.height,
-            price_per_unit: formSize.price_per_unit,
-            is_custom: formSize.is_custom,
-            min_quantity: formSize.min_quantity,
-            max_quantity: formSize.max_quantity
-          });
+      // Handle sizes and their quantity tiers
+      for (const size of sizes) {
+        let sizeId = size.id;
+        
+        if (size.id) {
+          // Update existing size
+          const { error: updateError } = await supabase
+            .from('product_sizes')
+            .update({
+              size_name: size.size_name,
+              width: size.width,
+              height: size.height,
+              price_per_unit: size.price_per_unit,
+              is_custom: size.is_custom,
+              min_quantity: size.min_quantity,
+              max_quantity: size.max_quantity
+            })
+            .eq('id', size.id);
+          
+          if (updateError) throw updateError;
         } else {
-          // New size - insert it
-          sizesToInsert.push({
-            size_name: formSize.size_name,
-            width: formSize.width,
-            height: formSize.height,
-            price_per_unit: formSize.price_per_unit,
-            is_custom: formSize.is_custom,
-            min_quantity: formSize.min_quantity,
-            max_quantity: formSize.max_quantity,
-            product_id: product.id
-          });
+          // Insert new size
+          const { data: newSizeData, error: insertError } = await supabase
+            .from('product_sizes')
+            .insert({
+              size_name: size.size_name,
+              width: size.width,
+              height: size.height,
+              price_per_unit: size.price_per_unit,
+              is_custom: size.is_custom,
+              min_quantity: size.min_quantity,
+              max_quantity: size.max_quantity,
+              product_id: product.id
+            })
+            .select()
+            .single();
+          
+          if (insertError) throw insertError;
+          sizeId = newSizeData.id;
         }
-      });
-      
-      // Find sizes to delete (existing sizes not in current form)
-      const currentSizeIds = sizes.filter(s => s.id).map(s => s.id);
-      existingSizes?.forEach(existingSize => {
-        if (!currentSizeIds.includes(existingSize.id)) {
-          if (!sizesWithOrders[existingSize.id]) {
-            sizesToDelete.push(existingSize.id);
-          } else {
-            // Size has orders, show warning but don't delete
-            toast({
-              title: "Warning",
-              description: `Size "${existingSize.size_name}" has existing orders and cannot be deleted.`,
-              variant: "destructive"
-            });
-          }
-        }
-      });
-      
-      // Execute updates
-      for (const sizeUpdate of sizesToUpdate) {
-        const { error: updateError } = await supabase
-          .from('product_sizes')
-          .update(sizeUpdate)
-          .eq('id', sizeUpdate.id);
         
-        if (updateError) throw updateError;
-      }
-      
-      // Execute inserts
-      if (sizesToInsert.length > 0) {
-        const { error: insertError } = await supabase
-          .from('product_sizes')
-          .insert(sizesToInsert);
-        
-        if (insertError) throw insertError;
-      }
-      
-      // Execute deletes (only for sizes without orders)
-      if (sizesToDelete.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('product_sizes')
+        // Delete existing quantity tiers for this size
+        await supabase
+          .from('quantity_tiers')
           .delete()
-          .in('id', sizesToDelete);
+          .eq('size_id', sizeId);
         
-        if (deleteError) throw deleteError;
+        // Insert new quantity tiers
+        if (size.quantity_tiers && size.quantity_tiers.length > 0) {
+          const tierData = size.quantity_tiers.map(tier => ({
+            size_id: sizeId,
+            min_quantity: tier.min_quantity,
+            max_quantity: tier.max_quantity,
+            price_per_unit: tier.price_per_unit,
+            discount_percentage: tier.discount_percentage,
+            display_order: tier.display_order
+          }));
+          
+          const { error: tiersError } = await supabase
+            .from('quantity_tiers')
+            .insert(tierData);
+          
+          if (tiersError) throw tiersError;
+        }
       }
 
       // Handle gallery images
@@ -297,7 +306,8 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       is_custom: false,
       min_quantity: 1,
       max_quantity: 100,
-      is_active: true
+      is_active: true,
+      quantity_tiers: []
     }]);
   };
 
@@ -323,6 +333,12 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
     setSizes(updatedSizes);
   };
 
+  const updateSizeQuantityTiers = (index: number, tiers: QuantityTier[]) => {
+    const updatedSizes = [...sizes];
+    updatedSizes[index] = { ...updatedSizes[index], quantity_tiers: tiers };
+    setSizes(updatedSizes);
+  };
+
   const handleFeatureImageUploaded = (url: string) => {
     setValue('feature_image_url', url);
   };
@@ -337,7 +353,7 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Card className="w-full max-w-6xl max-h-[90vh] overflow-y-auto">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>{product ? 'Edit Product' : 'Add Product'}</CardTitle>
@@ -441,13 +457,13 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
 
             <div>
               <div className="flex items-center justify-between mb-4">
-                <Label>Product Sizes</Label>
+                <Label>Product Sizes & Pricing</Label>
                 <Button type="button" onClick={addSize} variant="outline" size="sm">
                   Add Size
                 </Button>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {sizes.map((size, index) => (
                   <div key={index} className="border p-4 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
@@ -543,6 +559,13 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
                       />
                       <Label>Custom size (user-defined dimensions)</Label>
                     </div>
+                    
+                    <QuantityTierManager
+                      sizeName={size.size_name || `Size ${index + 1}`}
+                      basePricePerUnit={size.price_per_unit}
+                      tiers={size.quantity_tiers || []}
+                      onTiersChange={(tiers) => updateSizeQuantityTiers(index, tiers)}
+                    />
                   </div>
                 ))}
               </div>

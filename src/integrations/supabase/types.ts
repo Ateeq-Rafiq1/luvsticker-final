@@ -293,33 +293,42 @@ export type Database = {
         Row: {
           created_at: string
           discount_percentage: number | null
+          display_order: number | null
           id: string
           max_quantity: number | null
           min_quantity: number
+          price_per_unit: number
           product_id: string | null
+          size_id: string | null
         }
         Insert: {
           created_at?: string
           discount_percentage?: number | null
+          display_order?: number | null
           id?: string
           max_quantity?: number | null
           min_quantity: number
+          price_per_unit?: number
           product_id?: string | null
+          size_id?: string | null
         }
         Update: {
           created_at?: string
           discount_percentage?: number | null
+          display_order?: number | null
           id?: string
           max_quantity?: number | null
           min_quantity?: number
+          price_per_unit?: number
           product_id?: string | null
+          size_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "quantity_tiers_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "quantity_tiers_size_id_fkey"
+            columns: ["size_id"]
             isOneToOne: false
-            referencedRelation: "products"
+            referencedRelation: "product_sizes"
             referencedColumns: ["id"]
           },
         ]
