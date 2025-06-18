@@ -295,10 +295,9 @@ export type Database = {
           discount_percentage: number | null
           display_order: number | null
           id: string
-          max_quantity: number | null
-          min_quantity: number
           price_per_unit: number
           product_id: string | null
+          quantity: number
           size_id: string | null
         }
         Insert: {
@@ -306,10 +305,9 @@ export type Database = {
           discount_percentage?: number | null
           display_order?: number | null
           id?: string
-          max_quantity?: number | null
-          min_quantity: number
           price_per_unit?: number
           product_id?: string | null
+          quantity?: number
           size_id?: string | null
         }
         Update: {
@@ -317,10 +315,9 @@ export type Database = {
           discount_percentage?: number | null
           display_order?: number | null
           id?: string
-          max_quantity?: number | null
-          min_quantity?: number
           price_per_unit?: number
           product_id?: string | null
+          quantity?: number
           size_id?: string | null
         }
         Relationships: [

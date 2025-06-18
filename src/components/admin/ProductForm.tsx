@@ -37,8 +37,7 @@ interface ProductSize {
 
 interface QuantityTier {
   id?: string;
-  min_quantity: number;
-  max_quantity: number | null;
+  quantity: number;
   price_per_unit: number;
   discount_percentage: number;
   display_order: number;
@@ -128,8 +127,7 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
         if (size.quantity_tiers && size.quantity_tiers.length > 0) {
           const tierData = size.quantity_tiers.map(tier => ({
             size_id: sizeData.id,
-            min_quantity: tier.min_quantity,
-            max_quantity: tier.max_quantity,
+            quantity: tier.quantity,
             price_per_unit: tier.price_per_unit,
             discount_percentage: tier.discount_percentage,
             display_order: tier.display_order
@@ -236,8 +234,7 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
         if (size.quantity_tiers && size.quantity_tiers.length > 0) {
           const tierData = size.quantity_tiers.map(tier => ({
             size_id: sizeId,
-            min_quantity: tier.min_quantity,
-            max_quantity: tier.max_quantity,
+            quantity: tier.quantity,
             price_per_unit: tier.price_per_unit,
             discount_percentage: tier.discount_percentage,
             display_order: tier.display_order

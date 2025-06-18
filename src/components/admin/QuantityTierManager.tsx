@@ -9,8 +9,7 @@ import { X, Plus, Percent } from "lucide-react";
 
 interface QuantityTier {
   id?: string;
-  min_quantity: number;
-  max_quantity: number | null;
+  quantity: number;
   price_per_unit: number;
   discount_percentage: number;
   display_order: number;
@@ -25,9 +24,17 @@ interface QuantityTierManagerProps {
 
 const QuantityTierManager = ({ sizeName, basePricePerUnit, tiers, onTiersChange }: QuantityTierManagerProps) => {
   const addTier = () => {
+    // Find the next logical quantity value
+    const existingQuantities = tiers.map(t => t.quantity).sort((a, b) => a - b);
+    let nextQuantity = 50;
+    
+    if (existingQuantities.length > 0) {
+      const lastQuantity = existingQuantities[existingQuantities.length - 1];
+      nextQuantity = lastQuantity + 25;
+    }
+
     const newTier: QuantityTier = {
-      min_quantity: tiers.length > 0 ? (tiers[tiers.length - 1].max_quantity || 0) + 1 : 50,
-      max_quantity: tiers.length === 0 ? 100 : (tiers[tiers.length - 1].max_quantity || 0) + 50,
+      quantity: nextQuantity,
       price_per_unit: basePricePerUnit,
       discount_percentage: 0,
       display_order: tiers.length
@@ -37,7 +44,9 @@ const QuantityTierManager = ({ sizeName, basePricePerUnit, tiers, onTiersChange 
 
   const removeTier = (index: number) => {
     const updatedTiers = tiers.filter((_, i) => i !== index);
-    onTiersChange(updatedTiers);
+    // Update display orders
+    const reorderedTiers = updatedTiers.map((tier, i) => ({ ...tier, display_order: i }));
+    onTiersChange(reorderedTiers);
   };
 
   const updateTier = (index: number, field: keyof QuantityTier, value: any) => {
@@ -58,6 +67,9 @@ const QuantityTierManager = ({ sizeName, basePricePerUnit, tiers, onTiersChange 
     return Math.round(((basePricePerUnit - tierPrice) / basePricePerUnit) * 100);
   };
 
+  // Sort tiers by quantity for display
+  const sortedTiers = [...tiers].sort((a, b) => a.quantity - b.quantity);
+
   return (
     <Card className="mt-4">
       <CardHeader>
@@ -74,91 +86,80 @@ const QuantityTierManager = ({ sizeName, basePricePerUnit, tiers, onTiersChange 
           Base price: ${basePricePerUnit.toFixed(2)} per unit
         </div>
         
-        {tiers.length === 0 ? (
+        {sortedTiers.length === 0 ? (
           <div className="text-center py-4 text-gray-500">
             No quantity tiers defined. Users will pay the base price per unit.
           </div>
         ) : (
           <div className="space-y-4">
-            {tiers.map((tier, index) => (
-              <div key={index} className="border p-4 rounded-lg bg-gray-50">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">Tier {index + 1}</Badge>
-                    {calculateSavings(tier.price_per_unit) > 0 && (
-                      <Badge variant="secondary" className="text-green-600">
-                        <Percent className="w-3 h-3 mr-1" />
-                        Save {calculateSavings(tier.price_per_unit)}%
-                      </Badge>
-                    )}
+            {sortedTiers.map((tier, index) => {
+              const originalIndex = tiers.findIndex(t => t === tier);
+              return (
+                <div key={tier.id || index} className="border p-4 rounded-lg bg-gray-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Tier {index + 1}</Badge>
+                      {calculateSavings(tier.price_per_unit) > 0 && (
+                        <Badge variant="secondary" className="text-green-600">
+                          <Percent className="w-3 h-3 mr-1" />
+                          Save {calculateSavings(tier.price_per_unit)}%
+                        </Badge>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeTier(originalIndex)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeTier(index)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <Label>Min Quantity</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={tier.min_quantity}
-                      onChange={(e) => updateTier(index, 'min_quantity', parseInt(e.target.value) || 1)}
-                      className="mt-1"
-                    />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Quantity</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={tier.quantity}
+                        onChange={(e) => updateTier(originalIndex, 'quantity', parseInt(e.target.value) || 1)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label>Price per Unit ($)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        value={tier.price_per_unit}
+                        onChange={(e) => updateTier(originalIndex, 'price_per_unit', parseFloat(e.target.value) || 0.01)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label>Discount (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="99"
+                        value={tier.discount_percentage}
+                        onChange={(e) => updateTier(originalIndex, 'discount_percentage', parseFloat(e.target.value) || 0)}
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label>Max Quantity</Label>
-                    <Input
-                      type="number"
-                      min={tier.min_quantity}
-                      value={tier.max_quantity || ''}
-                      onChange={(e) => updateTier(index, 'max_quantity', e.target.value ? parseInt(e.target.value) : null)}
-                      placeholder="No limit"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label>Price per Unit ($)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      value={tier.price_per_unit}
-                      onChange={(e) => updateTier(index, 'price_per_unit', parseFloat(e.target.value) || 0.01)}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label>Discount (%)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="99"
-                      value={tier.discount_percentage}
-                      onChange={(e) => updateTier(index, 'discount_percentage', parseFloat(e.target.value) || 0)}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-                
-                <div className="mt-3 text-sm text-gray-600">
-                  {tier.min_quantity} - {tier.max_quantity || '∞'} units: 
-                  <strong className="ml-1">${tier.price_per_unit.toFixed(2)} each</strong>
-                  {tier.max_quantity && (
+                  
+                  <div className="mt-3 text-sm text-gray-600">
+                    <strong>{tier.quantity} units: ${tier.price_per_unit.toFixed(2)} each</strong>
                     <span className="ml-2">
-                      Total: ${(tier.price_per_unit * tier.max_quantity).toFixed(2)}
+                      Total: ${(tier.price_per_unit * tier.quantity).toFixed(2)}
                     </span>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>

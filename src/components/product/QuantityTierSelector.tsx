@@ -10,8 +10,7 @@ import { Percent, Calculator } from "lucide-react";
 
 interface QuantityTier {
   id: string;
-  min_quantity: number;
-  max_quantity: number | null;
+  quantity: number;
   price_per_unit: number;
   discount_percentage: number;
   display_order: number;
@@ -34,8 +33,8 @@ const QuantityTierSelector = ({
   const [customQuantity, setCustomQuantity] = useState<number>(selectedQuantity);
   const [useCustom, setUseCustom] = useState(false);
 
-  // Sort tiers by display order
-  const sortedTiers = [...quantityTiers].sort((a, b) => a.display_order - b.display_order);
+  // Sort tiers by quantity for display
+  const sortedTiers = [...quantityTiers].sort((a, b) => a.quantity - b.quantity);
 
   const calculateSavings = (tierPrice: number) => {
     if (tierPrice >= basePricePerUnit) return 0;
@@ -47,7 +46,7 @@ const QuantityTierSelector = ({
     if (tier) {
       setSelectedTier(tierId);
       setUseCustom(false);
-      onQuantityChange(tier.min_quantity, tier.price_per_unit);
+      onQuantityChange(tier.quantity, tier.price_per_unit);
     }
   };
 
@@ -55,7 +54,14 @@ const QuantityTierSelector = ({
     setCustomQuantity(quantity);
     setUseCustom(true);
     setSelectedTier("");
-    onQuantityChange(quantity, basePricePerUnit);
+    
+    // Check if this quantity matches any tier
+    const matchingTier = sortedTiers.find(t => t.quantity === quantity);
+    if (matchingTier) {
+      onQuantityChange(quantity, matchingTier.price_per_unit);
+    } else {
+      onQuantityChange(quantity, basePricePerUnit);
+    }
   };
 
   const getTotalPrice = (quantity: number, pricePerUnit: number) => {
@@ -94,7 +100,7 @@ const QuantityTierSelector = ({
         <div className="grid gap-4">
           {sortedTiers.map((tier) => {
             const savings = calculateSavings(tier.price_per_unit);
-            const totalPrice = getTotalPrice(tier.min_quantity, tier.price_per_unit);
+            const totalPrice = getTotalPrice(tier.quantity, tier.price_per_unit);
             
             return (
               <Card key={tier.id} className={`cursor-pointer transition-colors ${
@@ -108,10 +114,7 @@ const QuantityTierSelector = ({
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <span className="font-semibold text-lg">
-                              {tier.min_quantity}
-                              {tier.max_quantity && tier.max_quantity !== tier.min_quantity && (
-                                ` - ${tier.max_quantity}`
-                              )} units
+                              {tier.quantity} units
                             </span>
                             {savings > 0 && (
                               <Badge variant="secondary" className="bg-green-100 text-green-700">
@@ -167,10 +170,12 @@ const QuantityTierSelector = ({
                         />
                         <div className="text-right">
                           <div className="text-xl font-bold text-orange-600">
-                            ${getTotalPrice(customQuantity, basePricePerUnit)}
+                            ${getTotalPrice(customQuantity, 
+                              sortedTiers.find(t => t.quantity === customQuantity)?.price_per_unit || basePricePerUnit
+                            )}
                           </div>
                           <div className="text-sm text-gray-600">
-                            ${basePricePerUnit.toFixed(2)} each
+                            ${(sortedTiers.find(t => t.quantity === customQuantity)?.price_per_unit || basePricePerUnit).toFixed(2)} each
                           </div>
                         </div>
                       </div>

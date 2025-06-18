@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -123,30 +122,7 @@ const AdminProducts = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <div className="h-48 bg-gray-300"></div>
-                <CardContent className="p-6">
-                  <div className="h-4 bg-gray-300 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-2/3"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : products?.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 mb-4">No products found.</p>
-            <Button 
-              className="bg-orange-600 hover:bg-orange-700"
-              onClick={() => setShowForm(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Your First Product
-            </Button>
-          </div>
-        ) : (
+        {!isLoading && products && products.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products?.map((product) => (
               <Card key={product.id} className="hover:shadow-lg transition-shadow">
