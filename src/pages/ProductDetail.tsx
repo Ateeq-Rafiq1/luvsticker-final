@@ -12,18 +12,21 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import ArtworkUploadSection from "@/components/ArtworkUploadSection";
+import QuantityTierSelector from "@/components/product/QuantityTierSelector";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState<any>(null);
   const [sizes, setSizes] = useState<any[]>([]);
+  const [quantityTiers, setQuantityTiers] = useState<any[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   
   // State for product configuration
   const [selectedSize, setSelectedSize] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
+  const [tierPrice, setTierPrice] = useState<number | null>(null);
   const [customDimensions, setCustomDimensions] = useState<{ width: number; height: number } | null>(null);
   const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [artworkViaEmail, setArtworkViaEmail] = useState(false);
@@ -34,6 +37,12 @@ const ProductDetail = () => {
       fetchSizes();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (selectedSize) {
+      fetchQuantityTiers();
+    }
+  }, [selectedSize]);
 
   const fetchProduct = async () => {
     try {
@@ -72,20 +81,33 @@ const ProductDetail = () => {
     }
   };
 
+  const fetchQuantityTiers = async () => {
+    if (!selectedSize) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("quantity_tiers")
+        .select("*")
+        .eq("size_id", selectedSize.id)
+        .order("quantity");
+
+      if (error) throw error;
+      setQuantityTiers(data || []);
+    } catch (error) {
+      console.error("Error fetching quantity tiers:", error);
+    }
+  };
+
   const handleSizeSelect = (size: any) => {
     setSelectedSize(size);
-    setQuantity(size.min_quantity || 1);
+    setQuantity(1);
+    setTierPrice(null);
     setCustomDimensions(null);
   };
 
-  const handleQuantityChange = (newQuantity: number) => {
-    if (selectedSize) {
-      const min = selectedSize.min_quantity || 1;
-      const max = selectedSize.max_quantity || 100;
-      if (newQuantity >= min && newQuantity <= max) {
-        setQuantity(newQuantity);
-      }
-    }
+  const handleQuantityChange = (newQuantity: number, newTierPrice?: number) => {
+    setQuantity(newQuantity);
+    setTierPrice(newTierPrice || null);
   };
 
   const handleCustomDimensions = (width: number, height: number) => {
@@ -95,7 +117,7 @@ const ProductDetail = () => {
   const calculateTotal = () => {
     if (!selectedSize) return 0;
     
-    let basePrice = selectedSize.price_per_unit;
+    let basePrice = tierPrice || selectedSize.price_per_unit;
     if (customDimensions && selectedSize.is_custom) {
       const { width, height } = customDimensions;
       const area = (width * height) / 144; // Convert to square feet
@@ -261,9 +283,6 @@ const ProductDetail = () => {
                             ${size.price_per_unit}
                             {size.is_custom && " per sq ft"}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            Qty: {size.min_quantity}-{size.max_quantity}
-                          </div>
                           {size.is_custom && (
                             <Badge variant="secondary" className="mt-2">
                               Custom Size
@@ -315,32 +334,35 @@ const ProductDetail = () => {
                             Area: {((customDimensions.width * customDimensions.height) / 144).toFixed(2)} sq ft
                           </div>
                           <div className="text-lg font-bold text-orange-600">
-                            Price: ${(selectedSize.price_per_unit * ((customDimensions.width * customDimensions.height) / 144)).toFixed(2)}
+                            Price: ${((tierPrice || selectedSize.price_per_unit) * ((customDimensions.width * customDimensions.height) / 144)).toFixed(2)}
                           </div>
                         </div>
                       )}
                     </div>
                   )}
 
-                  <div>
-                    <Label htmlFor="quantity">Quantity</Label>
-                    <div className="flex items-center gap-4 mt-1">
+                  {selectedSize && !selectedSize.is_custom && (
+                    <QuantityTierSelector
+                      basePricePerUnit={selectedSize.price_per_unit}
+                      quantityTiers={quantityTiers}
+                      selectedQuantity={quantity}
+                      onQuantityChange={handleQuantityChange}
+                    />
+                  )}
+
+                  {selectedSize && selectedSize.is_custom && (
+                    <div>
+                      <Label htmlFor="quantity">Quantity</Label>
                       <Input
                         id="quantity"
                         type="number"
-                        min={selectedSize?.min_quantity || 1}
-                        max={selectedSize?.max_quantity || 100}
+                        min="1"
                         value={quantity}
-                        onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-                        className="w-24"
+                        onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                        className="w-24 mt-1"
                       />
-                      {selectedSize && (
-                        <span className="text-sm text-gray-500">
-                          Min: {selectedSize.min_quantity}, Max: {selectedSize.max_quantity}
-                        </span>
-                      )}
                     </div>
-                  </div>
+                  )}
 
                   <Button
                     onClick={() => setCurrentStep(2)}
@@ -390,6 +412,9 @@ const ProductDetail = () => {
                           </div>
                         )}
                         <div>Quantity: {quantity}</div>
+                        <div>
+                          Price per unit: ${(tierPrice || selectedSize?.price_per_unit || 0).toFixed(2)}
+                        </div>
                         <div>
                           Artwork: {artworkViaEmail 
                             ? "Will be sent via email to luvstickers3@gmail.com" 
