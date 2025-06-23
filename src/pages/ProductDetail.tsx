@@ -188,10 +188,10 @@ const ProductDetail = () => {
   }];
   return <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-amber-50">
       <Navbar />
-      <div className="flex-1 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex-1 py-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
-          <div className="mb-6">
+          <div className="mb-4">
             <Button
               variant="ghost"
               onClick={() => navigate('/products')}
@@ -202,18 +202,20 @@ const ProductDetail = () => {
             </Button>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid lg:grid-cols-2 gap-6 mb-6">
             {/* Product Image & Info */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="relative">
                 {product.feature_image_url && (
-                  <div className="relative overflow-hidden rounded-xl bg-white shadow-lg">
-                    <img
-                      src={product.feature_image_url}
-                      alt={product.name}
-                      className="w-full h-80 object-cover"
-                    />
-                    <div className="absolute top-3 right-3">
+                  <div className="relative overflow-hidden rounded-lg bg-white shadow-md">
+                    <div className="aspect-square">
+                      <img
+                        src={product.feature_image_url}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="absolute top-2 right-2">
                       <Badge className="bg-orange-600 text-white px-2 py-1 text-xs">
                         Premium Quality
                       </Badge>
@@ -223,19 +225,19 @@ const ProductDetail = () => {
               </div>
               
               {/* Product Features */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                  <CheckCircle className="w-6 h-6 text-green-500 mx-auto mb-1" />
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center p-2 bg-white rounded-md shadow-sm">
+                  <CheckCircle className="w-5 h-5 text-green-500 mx-auto mb-1" />
                   <p className="text-xs font-medium text-gray-800">High Quality</p>
                   <p className="text-xs text-gray-500">Premium materials</p>
                 </div>
-                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                  <Truck className="w-6 h-6 text-blue-500 mx-auto mb-1" />
+                <div className="text-center p-2 bg-white rounded-md shadow-sm">
+                  <Truck className="w-5 h-5 text-blue-500 mx-auto mb-1" />
                   <p className="text-xs font-medium text-gray-800">Fast Shipping</p>
                   <p className="text-xs text-gray-500">2-3 business days</p>
                 </div>
-                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                  <Shield className="w-6 h-6 text-purple-500 mx-auto mb-1" />
+                <div className="text-center p-2 bg-white rounded-md shadow-sm">
+                  <Shield className="w-5 h-5 text-purple-500 mx-auto mb-1" />
                   <p className="text-xs font-medium text-gray-800">Guaranteed</p>
                   <p className="text-xs text-gray-500">100% satisfaction</p>
                 </div>
@@ -243,16 +245,16 @@ const ProductDetail = () => {
             </div>
 
             {/* Product Details & Configuration */}
-            <div className="space-y-4">
-              <div className="bg-white rounded-xl p-6 shadow-lg">
-                <div className="mb-4">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+            <div className="space-y-2">
+              <div className="bg-white rounded-lg p-4 shadow-md">
+                <div className="mb-3">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-1">{product.name}</h1>
                   
                   {product.description && (
-                    <p className="text-gray-600 text-sm leading-relaxed mb-4">{product.description}</p>
+                    <p className="text-gray-600 text-sm leading-relaxed mb-2">{product.description}</p>
                   )}
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-orange-600">
+                    <span className="text-xl font-bold text-orange-600">
                       Starting at ${product.base_price}
                     </span>
                     <span className="text-sm text-gray-500 line-through">
@@ -265,12 +267,12 @@ const ProductDetail = () => {
                 </div>
 
                 {/* Compact Progress Steps */}
-                <div className="mb-6">
+                <div className="mb-4">
                   <div className="flex items-center justify-between">
                     {steps.map((step, index) => (
                       <div key={step.number} className="flex items-center flex-1">
                         <div className="flex flex-col items-center text-center">
-                          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-all duration-300 ${
+                          <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold transition-all duration-300 ${
                             currentStep >= step.number 
                               ? 'bg-orange-600 text-white shadow-md' 
                               : 'bg-gray-200 text-gray-600'
@@ -296,28 +298,27 @@ const ProductDetail = () => {
                 </div>
 
                 {/* Step Content */}
-                <Card className="border-0 shadow-md bg-gradient-to-br from-gray-50 to-white">
-                  <CardContent className="p-5">
+                <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-50 to-white">
+                  <CardContent className="p-3">
                     {currentStep === 1 && (
-                      <div className="space-y-5">
+                      <div className="space-y-3">
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900 mb-3">Select Size</h3>
-                          <div className="grid grid-cols-1 gap-2">
+                          <h3 className="text-base font-bold text-gray-900 mb-2">Select Size</h3>
+                          <div className="grid grid-cols-1 gap-1.5">
                             {sizes.map((size) => (
                               <div
                                 key={size.id}
                                 onClick={() => handleSizeSelect(size)}
-                                className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-300 ${
+                                className={`p-2 border-2 rounded-md cursor-pointer transition-all duration-300 ${
                                   selectedSize?.id === size.id
-                                    ? 'border-orange-500 bg-orange-50 shadow-md'
+                                    ? 'border-orange-500 bg-orange-50 shadow-sm'
                                     : 'border-gray-200 hover:border-gray-300 bg-white'
                                 }`}
                               >
                                 <div className="flex justify-between items-center">
                                   <div>
-                                    <div className="font-semibold text-sm text-gray-900">{size.size_name}</div>
                                     {size.width && size.height && (
-                                      <div className="text-gray-600 text-xs">
+                                      <div className="font-medium text-sm text-gray-900">
                                         {size.width}" × {size.height}"
                                       </div>
                                     )}
@@ -327,12 +328,6 @@ const ProductDetail = () => {
                                       </Badge>
                                     )}
                                   </div>
-                                  <div className="text-right">
-                                    <div className="text-lg font-bold text-orange-600">
-                                      ${size.price_per_unit}
-                                      {size.is_custom && <span className="text-xs"> per sq ft</span>}
-                                    </div>
-                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -340,9 +335,9 @@ const ProductDetail = () => {
                         </div>
 
                         {selectedSize?.is_custom && (
-                          <div className="bg-white p-4 rounded-lg border border-orange-200">
-                            <h4 className="text-sm font-semibold mb-3 text-gray-900">Custom Dimensions</h4>
-                            <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-white p-3 rounded-md border border-orange-200">
+                            <h4 className="text-sm font-semibold mb-2 text-gray-900">Custom Dimensions</h4>
+                            <div className="grid grid-cols-2 gap-2">
                               <div>
                                 <Label htmlFor="width" className="text-xs font-medium text-gray-700">Width (inches)</Label>
                                 <Input
@@ -352,7 +347,7 @@ const ProductDetail = () => {
                                   step="0.1"
                                   value={customDimensions?.width || ''}
                                   onChange={(e) => handleCustomDimensions(parseFloat(e.target.value) || 0, customDimensions?.height || 0)}
-                                  className="mt-1 h-8 text-sm"
+                                  className="mt-1 h-7 text-sm"
                                   placeholder="Width"
                                 />
                               </div>
@@ -365,13 +360,13 @@ const ProductDetail = () => {
                                   step="0.1"
                                   value={customDimensions?.height || ''}
                                   onChange={(e) => handleCustomDimensions(customDimensions?.width || 0, parseFloat(e.target.value) || 0)}
-                                  className="mt-1 h-8 text-sm"
+                                  className="mt-1 h-7 text-sm"
                                   placeholder="Height"
                                 />
                               </div>
                             </div>
                             {customDimensions?.width && customDimensions?.height && (
-                              <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                              <div className="mt-2 p-2 bg-orange-50 rounded-md border border-orange-200">
                                 <div className="flex justify-between items-center text-sm">
                                   <div>
                                     <div className="text-xs text-gray-600">Total Area</div>
@@ -381,7 +376,7 @@ const ProductDetail = () => {
                                   </div>
                                   <div className="text-right">
                                     <div className="text-xs text-gray-600">Price</div>
-                                    <div className="text-lg font-bold text-orange-600">
+                                    <div className="text-base font-bold text-orange-600">
                                       ${((tierPrice || selectedSize.price_per_unit) * (customDimensions.width * customDimensions.height / 144)).toFixed(2)}
                                     </div>
                                   </div>
@@ -392,7 +387,7 @@ const ProductDetail = () => {
                         )}
 
                         {selectedSize && !selectedSize.is_custom && (
-                          <div className="bg-white p-4 rounded-lg border border-gray-200">
+                          <div className="bg-white p-3 rounded-md border border-gray-200">
                             <QuantityTierSelector
                               basePricePerUnit={selectedSize.price_per_unit}
                               quantityTiers={quantityTiers}
@@ -403,7 +398,7 @@ const ProductDetail = () => {
                         )}
 
                         {selectedSize && selectedSize.is_custom && (
-                          <div className="bg-white p-4 rounded-lg border border-gray-200">
+                          <div className="bg-white p-3 rounded-md border border-gray-200">
                             <Label htmlFor="quantity" className="text-sm font-semibold text-gray-900">Quantity</Label>
                             <Input
                               id="quantity"
@@ -411,7 +406,7 @@ const ProductDetail = () => {
                               min="1"
                               value={quantity}
                               onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                              className="w-24 mt-2 h-8 text-sm"
+                              className="w-20 mt-1 h-7 text-sm"
                             />
                           </div>
                         )}
@@ -419,7 +414,7 @@ const ProductDetail = () => {
                         <Button
                           onClick={() => setCurrentStep(2)}
                           disabled={!selectedSize || (selectedSize.is_custom && (!customDimensions?.width || !customDimensions?.height))}
-                          className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white py-3 text-sm font-semibold rounded-lg shadow-lg transition-all duration-300"
+                          className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white py-2 text-sm font-semibold rounded-md shadow-md transition-all duration-300"
                         >
                           Continue to Artwork
                           <ArrowRight className="w-4 h-4 ml-2" />
@@ -428,8 +423,8 @@ const ProductDetail = () => {
                     )}
 
                     {currentStep === 2 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Upload Your Artwork</h3>
+                      <div className="space-y-3">
+                        <h3 className="text-base font-bold text-gray-900 mb-3">Upload Your Artwork</h3>
                         <ArtworkUploadSection
                           onArtworkChange={setArtworkFile}
                           onEmailOptionChange={setArtworkViaEmail}
@@ -450,13 +445,13 @@ const ProductDetail = () => {
                     )}
 
                     {currentStep === 3 && (
-                      <div className="space-y-5">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Review Your Order</h3>
+                      <div className="space-y-3">
+                        <h3 className="text-base font-bold text-gray-900 mb-3">Review Your Order</h3>
                         
-                        <div className="space-y-4">
-                          <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg">
-                            <h4 className="font-bold text-sm text-gray-900 mb-3">Order Summary</h4>
-                            <div className="space-y-2 text-sm text-gray-700">
+                        <div className="space-y-3">
+                          <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-md">
+                            <h4 className="font-bold text-sm text-gray-900 mb-2">Order Summary</h4>
+                            <div className="space-y-1.5 text-sm text-gray-700">
                               <div className="flex justify-between">
                                 <span>Product:</span>
                                 <span className="font-medium">{product.name}</span>
@@ -490,17 +485,17 @@ const ProductDetail = () => {
                             </div>
                           </div>
 
-                          <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-lg border-2 border-orange-200">
+                          <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-md border-2 border-orange-200">
                             <div className="flex justify-between items-center">
-                              <span className="text-lg font-bold text-gray-900">Total Amount:</span>
-                              <span className="text-2xl font-bold text-orange-600">
+                              <span className="text-base font-bold text-gray-900">Total Amount:</span>
+                              <span className="text-xl font-bold text-orange-600">
                                 ${calculateTotal().toFixed(2)}
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex gap-3">
+                        <div className="flex gap-2">
                           <Button
                             variant="outline"
                             onClick={() => setCurrentStep(2)}
@@ -511,7 +506,7 @@ const ProductDetail = () => {
                           </Button>
                           <Button
                             onClick={proceedToCheckout}
-                            className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-2 text-sm font-semibold rounded-lg shadow-lg transition-all duration-300"
+                            className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-2 text-sm font-semibold rounded-md shadow-md transition-all duration-300"
                           >
                             Complete Order
                             <ArrowRight className="w-4 h-4 ml-2" />

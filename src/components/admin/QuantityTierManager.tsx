@@ -39,25 +39,38 @@ const QuantityTierManager = ({ sizeName, basePricePerUnit, tiers, onTiersChange 
       discount_percentage: 0,
       display_order: tiers.length
     };
-    onTiersChange([...tiers, newTier]);
+    
+    // Create a new array with the new tier to trigger re-render
+    const updatedTiers = [...tiers, newTier];
+    onTiersChange(updatedTiers);
   };
 
   const removeTier = (index: number) => {
     const updatedTiers = tiers.filter((_, i) => i !== index);
     // Update display orders
-    const reorderedTiers = updatedTiers.map((tier, i) => ({ ...tier, display_order: i }));
+    const reorderedTiers = updatedTiers.map((tier, i) => ({ 
+      ...tier, 
+      display_order: i 
+    }));
     onTiersChange(reorderedTiers);
   };
 
   const updateTier = (index: number, field: keyof QuantityTier, value: any) => {
-    const updatedTiers = [...tiers];
-    updatedTiers[index] = { ...updatedTiers[index], [field]: value };
-    
-    // Auto-calculate price based on discount if discount changes
-    if (field === 'discount_percentage') {
-      const discountedPrice = basePricePerUnit * (1 - value / 100);
-      updatedTiers[index].price_per_unit = Math.max(0.01, discountedPrice);
-    }
+    // Create a completely new array to ensure React detects the change
+    const updatedTiers = tiers.map((tier, i) => {
+      if (i === index) {
+        const updatedTier = { ...tier, [field]: value };
+        
+        // Auto-calculate price based on discount if discount changes
+        if (field === 'discount_percentage') {
+          const discountedPrice = basePricePerUnit * (1 - value / 100);
+          updatedTier.price_per_unit = Math.max(0.01, discountedPrice);
+        }
+        
+        return updatedTier;
+      }
+      return tier;
+    });
     
     onTiersChange(updatedTiers);
   };
@@ -92,13 +105,19 @@ const QuantityTierManager = ({ sizeName, basePricePerUnit, tiers, onTiersChange 
           </div>
         ) : (
           <div className="space-y-4">
-            {sortedTiers.map((tier, index) => {
-              const originalIndex = tiers.findIndex(t => t === tier);
+            {sortedTiers.map((tier, sortedIndex) => {
+              // Find the original index in the unsorted array
+              const originalIndex = tiers.findIndex(t => 
+                t.quantity === tier.quantity && 
+                t.price_per_unit === tier.price_per_unit &&
+                t.display_order === tier.display_order
+              );
+              
               return (
-                <div key={tier.id || index} className="border p-4 rounded-lg bg-gray-50">
+                <div key={`${tier.quantity}-${tier.price_per_unit}-${originalIndex}`} className="border p-4 rounded-lg bg-gray-50">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">Tier {index + 1}</Badge>
+                      <Badge variant="outline">Tier {sortedIndex + 1}</Badge>
                       {calculateSavings(tier.price_per_unit) > 0 && (
                         <Badge variant="secondary" className="text-green-600">
                           <Percent className="w-3 h-3 mr-1" />

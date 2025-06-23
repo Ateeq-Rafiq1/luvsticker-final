@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -332,7 +333,7 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
 
   const updateSizeQuantityTiers = (index: number, tiers: QuantityTier[]) => {
     const updatedSizes = [...sizes];
-    updatedSizes[index] = { ...updatedSizes[index], quantity_tiers: tiers };
+    updatedSizes[index] = { ...updatedSizes[index], quantity_tiers: [...tiers] };
     setSizes(updatedSizes);
   };
 
@@ -349,9 +350,9 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <Card className="w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <CardHeader>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <Card className="w-full max-w-6xl h-[90vh] flex flex-col">
+        <CardHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <CardTitle>{product ? 'Edit Product' : 'Add Product'}</CardTitle>
             <Button variant="ghost" size="sm" onClick={onClose}>
@@ -359,7 +360,7 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 overflow-y-auto">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-6">
