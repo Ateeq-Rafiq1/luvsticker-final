@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,17 +58,29 @@ const QuantityTierManager = ({ sizeName, basePricePerUnit, tiers, onTiersChange 
     // Create a completely new array to ensure React detects the change
     const updatedTiers = tiers.map((tier, i) => {
       if (i === index) {
-        const updatedTier = { ...tier, [field]: value };
+        // Create a fresh copy of the tier with the updated field
+        const updatedTier = { 
+          ...tier,
+          [field]: field === 'quantity' ? Math.max(1, parseInt(value) || 1) : value
+        };
         
         // Auto-calculate price based on discount if discount changes
         if (field === 'discount_percentage') {
-          const discountedPrice = basePricePerUnit * (1 - value / 100);
+          const discountValue = Math.max(0, Math.min(99, parseFloat(value) || 0));
+          const discountedPrice = basePricePerUnit * (1 - discountValue / 100);
           updatedTier.price_per_unit = Math.max(0.01, discountedPrice);
+          updatedTier.discount_percentage = discountValue;
+        }
+        
+        // Ensure price is valid
+        if (field === 'price_per_unit') {
+          updatedTier.price_per_unit = Math.max(0.01, parseFloat(value) || 0.01);
         }
         
         return updatedTier;
       }
-      return tier;
+      // Return the original tier unchanged for other indices
+      return { ...tier };
     });
     
     onTiersChange(updatedTiers);
@@ -84,27 +95,27 @@ const QuantityTierManager = ({ sizeName, basePricePerUnit, tiers, onTiersChange 
   const sortedTiers = [...tiers].sort((a, b) => a.quantity - b.quantity);
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
+    <Card className="mt-3">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Quantity Tiers for {sizeName}</CardTitle>
+          <CardTitle className="text-base">Quantity Tiers for {sizeName}</CardTitle>
           <Button type="button" onClick={addTier} variant="outline" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-3 h-3 mr-1" />
             Add Tier
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-sm text-gray-600 mb-4">
+      <CardContent className="pt-0">
+        <div className="text-xs text-gray-600 mb-3">
           Base price: ${basePricePerUnit.toFixed(2)} per unit
         </div>
         
         {sortedTiers.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">
+          <div className="text-center py-3 text-gray-500 text-sm">
             No quantity tiers defined. Users will pay the base price per unit.
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {sortedTiers.map((tier, sortedIndex) => {
               // Find the original index in the unsorted array
               const originalIndex = tiers.findIndex(t => 
@@ -114,13 +125,13 @@ const QuantityTierManager = ({ sizeName, basePricePerUnit, tiers, onTiersChange 
               );
               
               return (
-                <div key={`${tier.quantity}-${tier.price_per_unit}-${originalIndex}`} className="border p-4 rounded-lg bg-gray-50">
-                  <div className="flex items-center justify-between mb-3">
+                <div key={`tier-${originalIndex}-${tier.quantity}-${tier.display_order}`} className="border p-3 rounded-md bg-gray-50">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">Tier {sortedIndex + 1}</Badge>
+                      <Badge variant="outline" className="text-xs">Tier {sortedIndex + 1}</Badge>
                       {calculateSavings(tier.price_per_unit) > 0 && (
-                        <Badge variant="secondary" className="text-green-600">
-                          <Percent className="w-3 h-3 mr-1" />
+                        <Badge variant="secondary" className="text-green-600 text-xs">
+                          <Percent className="w-2 h-2 mr-1" />
                           Save {calculateSavings(tier.price_per_unit)}%
                         </Badge>
                       )}
@@ -130,47 +141,48 @@ const QuantityTierManager = ({ sizeName, basePricePerUnit, tiers, onTiersChange 
                       variant="ghost"
                       size="sm"
                       onClick={() => removeTier(originalIndex)}
+                      className="h-6 w-6 p-0"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3" />
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <Label>Quantity</Label>
+                      <Label className="text-xs">Quantity</Label>
                       <Input
                         type="number"
                         min="1"
                         value={tier.quantity}
-                        onChange={(e) => updateTier(originalIndex, 'quantity', parseInt(e.target.value) || 1)}
-                        className="mt-1"
+                        onChange={(e) => updateTier(originalIndex, 'quantity', e.target.value)}
+                        className="mt-1 h-8 text-sm"
                       />
                     </div>
                     <div>
-                      <Label>Price per Unit ($)</Label>
+                      <Label className="text-xs">Price per Unit ($)</Label>
                       <Input
                         type="number"
                         step="0.01"
                         min="0.01"
                         value={tier.price_per_unit}
-                        onChange={(e) => updateTier(originalIndex, 'price_per_unit', parseFloat(e.target.value) || 0.01)}
-                        className="mt-1"
+                        onChange={(e) => updateTier(originalIndex, 'price_per_unit', e.target.value)}
+                        className="mt-1 h-8 text-sm"
                       />
                     </div>
                     <div>
-                      <Label>Discount (%)</Label>
+                      <Label className="text-xs">Discount (%)</Label>
                       <Input
                         type="number"
                         min="0"
                         max="99"
                         value={tier.discount_percentage}
-                        onChange={(e) => updateTier(originalIndex, 'discount_percentage', parseFloat(e.target.value) || 0)}
-                        className="mt-1"
+                        onChange={(e) => updateTier(originalIndex, 'discount_percentage', e.target.value)}
+                        className="mt-1 h-8 text-sm"
                       />
                     </div>
                   </div>
                   
-                  <div className="mt-3 text-sm text-gray-600">
+                  <div className="mt-2 text-xs text-gray-600">
                     <strong>{tier.quantity} units: ${tier.price_per_unit.toFixed(2)} each</strong>
                     <span className="ml-2">
                       Total: ${(tier.price_per_unit * tier.quantity).toFixed(2)}
