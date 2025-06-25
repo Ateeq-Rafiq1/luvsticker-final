@@ -70,7 +70,7 @@ const ProductDetail = () => {
       const {
         data,
         error
-      } = await supabase.from("product_sizes").select("*").eq("product_id", id).order("price_per_unit");
+      } = await supabase.from("product_sizes").select("*").eq("product_id", id).order("display_order", { ascending: true });
       if (error) throw error;
       setSizes(data || []);
     } catch (error) {

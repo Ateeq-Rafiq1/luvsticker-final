@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,7 +28,14 @@ const ProductShowcase = () => {
         `).eq('is_active', true).order('created_at', {
         ascending: false
       });
-      return data || [];
+      
+      // Sort product sizes by display_order for each product
+      const productsWithSortedSizes = data?.map(product => ({
+        ...product,
+        product_sizes: product.product_sizes?.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
+      })) || [];
+      
+      return productsWithSortedSizes;
     }
   });
 

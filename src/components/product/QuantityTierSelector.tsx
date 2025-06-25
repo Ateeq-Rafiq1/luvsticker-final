@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Percent, Calculator } from "lucide-react";
+import { Percent, Calculator, Zap } from "lucide-react";
 
 interface QuantityTier {
   id: string;
@@ -41,12 +41,37 @@ const QuantityTierSelector = ({
     return Math.round(((basePricePerUnit - tierPrice) / basePricePerUnit) * 100);
   };
 
+  const getBulkDiscountPrice = (quantity: number) => {
+    // Apply 90% discount for quantities over 10,000
+    if (quantity > 10000) {
+      return basePricePerUnit * 0.1; // 90% off means paying only 10%
+    }
+    return null;
+  };
+
+  const getEffectivePrice = (quantity: number) => {
+    // Check for bulk discount first
+    const bulkPrice = getBulkDiscountPrice(quantity);
+    if (bulkPrice !== null) {
+      return bulkPrice;
+    }
+
+    // Check if this quantity matches any tier
+    const matchingTier = sortedTiers.find(t => t.quantity === quantity);
+    if (matchingTier) {
+      return matchingTier.price_per_unit;
+    }
+
+    return basePricePerUnit;
+  };
+
   const handleTierSelect = (tierId: string) => {
     const tier = sortedTiers.find(t => t.id === tierId);
     if (tier) {
       setSelectedTier(tierId);
       setUseCustom(false);
-      onQuantityChange(tier.quantity, tier.price_per_unit);
+      const effectivePrice = getEffectivePrice(tier.quantity);
+      onQuantityChange(tier.quantity, effectivePrice);
     }
   };
 
@@ -55,13 +80,8 @@ const QuantityTierSelector = ({
     setUseCustom(true);
     setSelectedTier("");
     
-    // Check if this quantity matches any tier
-    const matchingTier = sortedTiers.find(t => t.quantity === quantity);
-    if (matchingTier) {
-      onQuantityChange(quantity, matchingTier.price_per_unit);
-    } else {
-      onQuantityChange(quantity, basePricePerUnit);
-    }
+    const effectivePrice = getEffectivePrice(quantity);
+    onQuantityChange(quantity, effectivePrice);
   };
 
   const getTotalPrice = (quantity: number, pricePerUnit: number) => {
@@ -77,12 +97,29 @@ const QuantityTierSelector = ({
           type="number"
           min="1"
           value={selectedQuantity}
-          onChange={(e) => onQuantityChange(parseInt(e.target.value) || 1)}
+          onChange={(e) => {
+            const qty = parseInt(e.target.value) || 1;
+            const effectivePrice = getEffectivePrice(qty);
+            onQuantityChange(qty, effectivePrice);
+          }}
           className="w-32"
         />
         <div className="text-sm text-gray-600">
-          Price per unit: ${basePricePerUnit.toFixed(2)}
+          Price per unit: ${getEffectivePrice(selectedQuantity).toFixed(2)}
         </div>
+        {selectedQuantity > 10000 && (
+          <div className="p-3 bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-300 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Zap className="w-5 h-5 text-green-600" />
+              <Badge className="bg-green-600 text-white">
+                BULK DISCOUNT - 90% OFF
+              </Badge>
+            </div>
+            <p className="text-sm text-green-700 mt-1">
+              Amazing savings on orders over 10,000 units!
+            </p>
+          </div>
+        )}
       </div>
     );
   }
@@ -99,13 +136,15 @@ const QuantityTierSelector = ({
       <RadioGroup value={selectedTier} onValueChange={handleTierSelect}>
         <div className="grid gap-4">
           {sortedTiers.map((tier) => {
-            const savings = calculateSavings(tier.price_per_unit);
-            const totalPrice = getTotalPrice(tier.quantity, tier.price_per_unit);
+            const effectivePrice = getEffectivePrice(tier.quantity);
+            const savings = calculateSavings(effectivePrice);
+            const totalPrice = getTotalPrice(tier.quantity, effectivePrice);
+            const isBulkDiscount = tier.quantity > 10000;
             
             return (
               <Card key={tier.id} className={`cursor-pointer transition-colors ${
                 selectedTier === tier.id ? 'ring-2 ring-orange-500 bg-orange-50' : 'hover:bg-gray-50'
-              }`}>
+              } ${isBulkDiscount ? 'ring-2 ring-green-500 bg-green-50' : ''}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
                     <RadioGroupItem value={tier.id} id={tier.id} />
@@ -116,7 +155,12 @@ const QuantityTierSelector = ({
                             <span className="font-semibold text-lg">
                               {tier.quantity} units
                             </span>
-                            {savings > 0 && (
+                            {isBulkDiscount ? (
+                              <Badge className="bg-green-600 text-white">
+                                <Zap className="w-3 h-3 mr-1" />
+                                BULK 90% OFF
+                              </Badge>
+                            ) : savings > 0 && (
                               <Badge variant="secondary" className="bg-green-100 text-green-700">
                                 <Percent className="w-3 h-3 mr-1" />
                                 Save {savings}%
@@ -124,11 +168,11 @@ const QuantityTierSelector = ({
                             )}
                           </div>
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-orange-600">
+                            <div className={`text-2xl font-bold ${isBulkDiscount ? 'text-green-600' : 'text-orange-600'}`}>
                               ${totalPrice}
                             </div>
                             <div className="text-sm text-gray-600">
-                              ${tier.price_per_unit.toFixed(2)} each
+                              ${effectivePrice.toFixed(2)} each
                             </div>
                           </div>
                         </div>
@@ -143,7 +187,7 @@ const QuantityTierSelector = ({
           {/* Custom Quantity Option */}
           <Card className={`cursor-pointer transition-colors ${
             useCustom ? 'ring-2 ring-orange-500 bg-orange-50' : 'hover:bg-gray-50'
-          }`}>
+          } ${customQuantity > 10000 ? 'ring-2 ring-green-500 bg-green-50' : ''}`}>
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <RadioGroupItem 
@@ -169,13 +213,11 @@ const QuantityTierSelector = ({
                           onClick={(e) => e.stopPropagation()}
                         />
                         <div className="text-right">
-                          <div className="text-xl font-bold text-orange-600">
-                            ${getTotalPrice(customQuantity, 
-                              sortedTiers.find(t => t.quantity === customQuantity)?.price_per_unit || basePricePerUnit
-                            )}
+                          <div className={`text-xl font-bold ${customQuantity > 10000 ? 'text-green-600' : 'text-orange-600'}`}>
+                            ${getTotalPrice(customQuantity, getEffectivePrice(customQuantity))}
                           </div>
                           <div className="text-sm text-gray-600">
-                            ${(sortedTiers.find(t => t.quantity === customQuantity)?.price_per_unit || basePricePerUnit).toFixed(2)} each
+                            ${getEffectivePrice(customQuantity).toFixed(2)} each
                           </div>
                         </div>
                       </div>
@@ -185,6 +227,24 @@ const QuantityTierSelector = ({
               </div>
             </CardContent>
           </Card>
+
+          {/* Bulk Discount Notice */}
+          {(useCustom && customQuantity > 10000) && (
+            <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-300 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                <Zap className="w-6 h-6 text-green-600" />
+                <Badge className="bg-green-600 text-white text-sm">
+                  BULK DISCOUNT APPLIED - 90% OFF
+                </Badge>
+              </div>
+              <p className="text-sm text-green-700 font-medium">
+                🎉 Incredible savings! You're getting 90% off on this bulk order of {customQuantity.toLocaleString()} units.
+              </p>
+              <p className="text-xs text-green-600 mt-1">
+                Original price: ${basePricePerUnit.toFixed(2)} → Your price: ${(basePricePerUnit * 0.1).toFixed(2)} per unit
+              </p>
+            </div>
+          )}
         </div>
       </RadioGroup>
     </div>
