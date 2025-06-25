@@ -28,7 +28,13 @@ const AdminProducts = () => {
         `)
         .order('created_at', { ascending: false });
       
-      return data || [];
+      // Sort product sizes by display_order
+      const productsWithSortedSizes = data?.map(product => ({
+        ...product,
+        product_sizes: product.product_sizes?.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
+      })) || [];
+      
+      return productsWithSortedSizes;
     }
   });
 

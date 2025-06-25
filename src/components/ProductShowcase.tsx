@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+
 const ProductShowcase = () => {
   const {
     data: products,
@@ -20,7 +21,8 @@ const ProductShowcase = () => {
             image_type
           ),
           product_sizes (
-            price_per_unit
+            price_per_unit,
+            display_order
           )
         `).eq('is_active', true).order('created_at', {
         ascending: false
@@ -28,6 +30,7 @@ const ProductShowcase = () => {
       return data || [];
     }
   });
+
   if (isLoading) {
     return <section id="products" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,6 +45,7 @@ const ProductShowcase = () => {
         </div>
       </section>;
   }
+
   return <section id="products" className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-bold text-center mb-12">Our Products</h2>
@@ -71,4 +75,5 @@ const ProductShowcase = () => {
       </div>
     </section>;
 };
+
 export default ProductShowcase;

@@ -212,6 +212,7 @@ export type Database = {
       product_sizes: {
         Row: {
           created_at: string
+          display_order: number | null
           height: number | null
           id: string
           is_custom: boolean | null
@@ -224,6 +225,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          display_order?: number | null
           height?: number | null
           id?: string
           is_custom?: boolean | null
@@ -236,6 +238,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          display_order?: number | null
           height?: number | null
           id?: string
           is_custom?: boolean | null

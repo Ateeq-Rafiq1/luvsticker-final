@@ -33,6 +33,7 @@ interface ProductSize {
   max_quantity: number;
   is_active?: boolean;
   has_orders?: boolean;
+  display_order?: number;
   quantity_tiers?: QuantityTier[];
 }
 
@@ -52,7 +53,7 @@ interface ProductFormProps {
 const ProductForm = ({ onClose, product }: ProductFormProps) => {
   const queryClient = useQueryClient();
   const [sizes, setSizes] = useState<ProductSize[]>(
-    product?.product_sizes?.map((size: any) => ({
+    product?.product_sizes?.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0)).map((size: any) => ({
       ...size,
       quantity_tiers: size.quantity_tiers || []
     })) || [{ 
@@ -64,6 +65,7 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       min_quantity: 1,
       max_quantity: 100,
       is_active: true,
+      display_order: 0,
       quantity_tiers: []
     }]
   );
@@ -106,7 +108,7 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       if (error) throw error;
       
       // Insert sizes and their quantity tiers
-      for (const size of sizes) {
+      for (const [index, size] of sizes.entries()) {
         const { data: sizeData, error: sizeError } = await supabase
           .from('product_sizes')
           .insert({
@@ -117,6 +119,7 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
             is_custom: size.is_custom,
             min_quantity: size.min_quantity,
             max_quantity: size.max_quantity,
+            display_order: index,
             product_id: productData.id
           })
           .select()
@@ -185,7 +188,7 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       if (error) throw error;
       
       // Handle sizes and their quantity tiers
-      for (const size of sizes) {
+      for (const [index, size] of sizes.entries()) {
         let sizeId = size.id;
         
         if (size.id) {
@@ -199,7 +202,8 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
               price_per_unit: size.price_per_unit,
               is_custom: size.is_custom,
               min_quantity: size.min_quantity,
-              max_quantity: size.max_quantity
+              max_quantity: size.max_quantity,
+              display_order: index
             })
             .eq('id', size.id);
           
@@ -216,6 +220,7 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
               is_custom: size.is_custom,
               min_quantity: size.min_quantity,
               max_quantity: size.max_quantity,
+              display_order: index,
               product_id: product.id
             })
             .select()
@@ -305,6 +310,7 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
       min_quantity: 1,
       max_quantity: 100,
       is_active: true,
+      display_order: sizes.length,
       quantity_tiers: []
     }]);
   };
@@ -312,9 +318,12 @@ const ProductForm = ({ onClose, product }: ProductFormProps) => {
   const removeSize = (index: number) => {
     const sizeToRemove = sizes[index];
     
-    // If it's an existing size with an ID, we'll handle it in the update mutation
-    // For now, just remove it from the form state
-    setSizes(sizes.filter((_, i) => i !== index));
+    // Remove from form state and update display_order for remaining sizes
+    const updatedSizes = sizes.filter((_, i) => i !== index).map((size, newIndex) => ({
+      ...size,
+      display_order: newIndex
+    }));
+    setSizes(updatedSizes);
     
     // Show warning if removing an existing size
     if (sizeToRemove.id && product) {
