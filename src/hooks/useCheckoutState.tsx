@@ -1,4 +1,5 @@
-
+// This file is no longer needed as we've switched to an inquiry-based system
+// Keeping as placeholder to avoid import errors
 import { useState } from "react";
 
 export interface CheckoutState {

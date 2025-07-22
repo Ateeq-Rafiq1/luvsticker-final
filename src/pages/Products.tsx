@@ -75,7 +75,6 @@ const Products = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {products?.map((product) => {
-                // Find feature image or fall back to first gallery image or null
                 const featureImage = product.feature_image_url || 
                                      product.product_images?.find((img: any) => img.image_type === 'feature')?.image_url ||
                                      product.product_images?.[0]?.image_url;
@@ -106,14 +105,11 @@ const Products = () => {
                         {product.description}
                       </p>
                       <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-lg font-bold text-orange-600">
-                            From ${Math.min(...(product.product_sizes?.map(s => s.price_per_unit) || [0]))}
-                          </span>
-                          <p className="text-xs text-gray-500">per piece</p>
+                        <div className="text-sm text-gray-500">
+                          Custom quotes available
                         </div>
                         <Button asChild className="bg-orange-600 hover:bg-orange-700">
-                          <Link to={`/product/${product.id}`}>View Details</Link>
+                          <Link to={`/product/${product.id}`}>Get Quote</Link>
                         </Button>
                       </div>
                     </CardContent>

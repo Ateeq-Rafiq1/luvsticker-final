@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,32 +9,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Star, CheckCircle, Truck, Shield } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, Truck, Shield, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import ArtworkUploadSection from "@/components/ArtworkUploadSection";
-import QuantityTierSelector from "@/components/product/QuantityTierSelector";
+import InquiryModal from "@/components/InquiryModal";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const ProductDetail = () => {
-  const {
-    id
-  } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState<any>(null);
   const [sizes, setSizes] = useState<any[]>([]);
-  const [quantityTiers, setQuantityTiers] = useState<any[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
 
   // State for product configuration
   const [selectedSize, setSelectedSize] = useState<any>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [tierPrice, setTierPrice] = useState<number | null>(null);
+  const [quantity, setQuantity] = useState(1000); // Minimum 1000
   const [customDimensions, setCustomDimensions] = useState<{
     width: number;
     height: number;
   } | null>(null);
   const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [artworkViaEmail, setArtworkViaEmail] = useState(false);
+  const [showInquiryModal, setShowInquiryModal] = useState(false);
+
+  // Collapsible state
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+  const [isProcessOpen, setIsProcessOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -41,17 +44,15 @@ const ProductDetail = () => {
       fetchSizes();
     }
   }, [id]);
-  useEffect(() => {
-    if (selectedSize) {
-      fetchQuantityTiers();
-    }
-  }, [selectedSize]);
+
   const fetchProduct = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from("products").select("*").eq("id", id).single();
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .single();
+      
       if (error) throw error;
       setProduct(data);
     } catch (error) {
@@ -65,89 +66,61 @@ const ProductDetail = () => {
       setLoading(false);
     }
   };
+
   const fetchSizes = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from("product_sizes").select("*").eq("product_id", id).order("display_order", { ascending: true });
+      const { data, error } = await supabase
+        .from("product_sizes")
+        .select("*")
+        .eq("product_id", id)
+        .order("display_order", { ascending: true });
+      
       if (error) throw error;
       setSizes(data || []);
     } catch (error) {
       console.error("Error fetching sizes:", error);
     }
   };
-  const fetchQuantityTiers = async () => {
-    if (!selectedSize) return;
-    try {
-      const {
-        data,
-        error
-      } = await supabase.from("quantity_tiers").select("*").eq("size_id", selectedSize.id).order("quantity");
-      if (error) throw error;
-      setQuantityTiers(data || []);
-    } catch (error) {
-      console.error("Error fetching quantity tiers:", error);
-    }
-  };
+
   const handleSizeSelect = (size: any) => {
     setSelectedSize(size);
-    setQuantity(1);
-    setTierPrice(null);
     setCustomDimensions(null);
   };
-  const handleQuantityChange = (newQuantity: number, newTierPrice?: number) => {
-    setQuantity(newQuantity);
-    setTierPrice(newTierPrice || null);
-  };
-  const handleCustomDimensions = (width: number, height: number) => {
-    setCustomDimensions({
-      width,
-      height
-    });
-  };
-  const calculateTotal = () => {
-    if (!selectedSize) return 0;
-    let basePrice = tierPrice || selectedSize.price_per_unit;
-    if (customDimensions && selectedSize.is_custom) {
-      const {
-        width,
-        height
-      } = customDimensions;
-      const area = width * height / 144; // Convert to square feet
-      basePrice = basePrice * area;
-    }
-    return basePrice * quantity;
-  };
-  const proceedToCheckout = () => {
-    // Store checkout data in sessionStorage for the checkout page
-    sessionStorage.setItem('orderData', JSON.stringify({
-      productId: id,
-      productName: product.name,
-      sizeId: selectedSize.id,
-      sizeName: selectedSize.size_name,
-      quantity: quantity,
-      customWidth: customDimensions?.width || null,
-      customHeight: customDimensions?.height || null,
-      total: calculateTotal().toFixed(2),
-      artwork_via_email: artworkViaEmail
-    }));
 
-    // Store artwork file data separately if exists
-    if (artworkFile) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        sessionStorage.setItem('orderArtwork', e.target?.result as string);
-        sessionStorage.setItem('orderArtworkName', artworkFile.name);
-        navigate('/checkout');
-      };
-      reader.readAsDataURL(artworkFile);
-    } else {
-      navigate('/checkout');
-    }
+  const handleCustomDimensions = (width: number, height: number) => {
+    setCustomDimensions({ width, height });
   };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value) || 1000;
+    setQuantity(Math.max(1000, value)); // Enforce minimum of 1000
+  };
+
+  const handleInquirySubmit = () => {
+    if (!selectedSize || quantity < 1000) {
+      toast({
+        title: "Please complete your selection",
+        description: "Select a size and ensure minimum quantity of 1000",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (selectedSize.is_custom && (!customDimensions?.width || !customDimensions?.height)) {
+      toast({
+        title: "Custom dimensions required",
+        description: "Please specify width and height for custom size",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setShowInquiryModal(true);
+  };
+
   if (loading) {
-    return <div className="min-h-screen flex flex-col">
+    return (
+      <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50">
           <div className="text-center">
@@ -156,10 +129,13 @@ const ProductDetail = () => {
           </div>
         </div>
         <Footer />
-      </div>;
+      </div>
+    );
   }
+
   if (!product) {
-    return <div className="min-h-screen flex flex-col">
+    return (
+      <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50">
           <div className="text-center">
@@ -171,22 +147,18 @@ const ProductDetail = () => {
           </div>
         </div>
         <Footer />
-      </div>;
+      </div>
+    );
   }
-  const steps = [{
-    number: 1,
-    title: "Size & Quantity",
-    description: "Choose your perfect size"
-  }, {
-    number: 2,
-    title: "Upload Artwork",
-    description: "Add your design"
-  }, {
-    number: 3,
-    title: "Review & Order",
-    description: "Confirm your order"
-  }];
-  return <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-amber-50">
+
+  const steps = [
+    { number: 1, title: "Size & Quantity", description: "Choose your specifications" },
+    { number: 2, title: "Upload Artwork", description: "Add your design" },
+    { number: 3, title: "Submit Inquiry", description: "Get your quote" }
+  ];
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-amber-50">
       <Navbar />
       <div className="flex-1 py-4">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -234,7 +206,7 @@ const ProductDetail = () => {
                 <div className="text-center p-2 bg-white rounded-md shadow-sm">
                   <Truck className="w-5 h-5 text-blue-500 mx-auto mb-1" />
                   <p className="text-xs font-medium text-gray-800">Fast Shipping</p>
-                  <p className="text-xs text-gray-500">2-3 business days</p>
+                  <p className="text-xs text-gray-500">Quick turnaround</p>
                 </div>
                 <div className="text-center p-2 bg-white rounded-md shadow-sm">
                   <Shield className="w-5 h-5 text-purple-500 mx-auto mb-1" />
@@ -255,18 +227,15 @@ const ProductDetail = () => {
                   )}
                   <div className="flex items-baseline gap-2">
                     <span className="text-xl font-bold text-orange-600">
-                      Starting at ${product.base_price}
-                    </span>
-                    <span className="text-sm text-gray-500 line-through">
-                      ${(product.base_price * 1.3).toFixed(2)}
+                      Custom Quote Available
                     </span>
                     <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
-                      Save 23%
+                      Professional Service
                     </Badge>
                   </div>
                 </div>
 
-                {/* Compact Progress Steps */}
+                {/* Progress Steps */}
                 <div className="mb-4">
                   <div className="flex items-center justify-between">
                     {steps.map((step, index) => (
@@ -365,55 +334,28 @@ const ProductDetail = () => {
                                 />
                               </div>
                             </div>
-                            {customDimensions?.width && customDimensions?.height && (
-                              <div className="mt-2 p-2 bg-orange-50 rounded-md border border-orange-200">
-                                <div className="flex justify-between items-center text-sm">
-                                  <div>
-                                    <div className="text-xs text-gray-600">Total Area</div>
-                                    <div className="font-semibold text-gray-900">
-                                      {(customDimensions.width * customDimensions.height / 144).toFixed(2)} sq ft
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-xs text-gray-600">Price</div>
-                                    <div className="text-base font-bold text-orange-600">
-                                      ${((tierPrice || selectedSize.price_per_unit) * (customDimensions.width * customDimensions.height / 144)).toFixed(2)}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         )}
 
-                        {selectedSize && !selectedSize.is_custom && (
-                          <div className="bg-white p-3 rounded-md border border-gray-200">
-                            <QuantityTierSelector
-                              basePricePerUnit={selectedSize.price_per_unit}
-                              quantityTiers={quantityTiers}
-                              selectedQuantity={quantity}
-                              onQuantityChange={handleQuantityChange}
-                            />
-                          </div>
-                        )}
-
-                        {selectedSize && selectedSize.is_custom && (
-                          <div className="bg-white p-3 rounded-md border border-gray-200">
-                            <Label htmlFor="quantity" className="text-sm font-semibold text-gray-900">Quantity</Label>
-                            <Input
-                              id="quantity"
-                              type="number"
-                              min="1"
-                              value={quantity}
-                              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                              className="w-20 mt-1 h-7 text-sm"
-                            />
-                          </div>
-                        )}
+                        <div className="bg-white p-3 rounded-md border border-gray-200">
+                          <Label htmlFor="quantity" className="text-sm font-semibold text-gray-900">Quantity (Minimum: 1,000)</Label>
+                          <Input
+                            id="quantity"
+                            type="number"
+                            min="1000"
+                            value={quantity}
+                            onChange={handleQuantityChange}
+                            className="mt-1 h-8 text-sm"
+                            placeholder="Enter quantity (min 1000)"
+                          />
+                          {quantity < 1000 && (
+                            <p className="text-xs text-red-500 mt-1">Minimum order quantity is 1,000 units</p>
+                          )}
+                        </div>
 
                         <Button
                           onClick={() => setCurrentStep(2)}
-                          disabled={!selectedSize || (selectedSize.is_custom && (!customDimensions?.width || !customDimensions?.height))}
+                          disabled={!selectedSize || quantity < 1000 || (selectedSize?.is_custom && (!customDimensions?.width || !customDimensions?.height))}
                           className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white py-2 text-sm font-semibold rounded-md shadow-md transition-all duration-300"
                         >
                           Continue to Artwork
@@ -446,11 +388,11 @@ const ProductDetail = () => {
 
                     {currentStep === 3 && (
                       <div className="space-y-3">
-                        <h3 className="text-base font-bold text-gray-900 mb-3">Review Your Order</h3>
+                        <h3 className="text-base font-bold text-gray-900 mb-3">Review Your Selection</h3>
                         
                         <div className="space-y-3">
                           <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-md">
-                            <h4 className="font-bold text-sm text-gray-900 mb-2">Order Summary</h4>
+                            <h4 className="font-bold text-sm text-gray-900 mb-2">Inquiry Summary</h4>
                             <div className="space-y-1.5 text-sm text-gray-700">
                               <div className="flex justify-between">
                                 <span>Product:</span>
@@ -470,27 +412,14 @@ const ProductDetail = () => {
                               )}
                               <div className="flex justify-between">
                                 <span>Quantity:</span>
-                                <span className="font-medium">{quantity}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Price per unit:</span>
-                                <span className="font-medium">${(tierPrice || selectedSize?.price_per_unit || 0).toFixed(2)}</span>
+                                <span className="font-medium">{quantity.toLocaleString()}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Artwork:</span>
                                 <span className="font-medium text-xs">
-                                  {artworkViaEmail ? "Will be sent via email" : artworkFile?.name || "No file selected"}
+                                  {artworkViaEmail ? "Will be sent via email" : artworkFile?.name || "Not uploaded"}
                                 </span>
                               </div>
-                            </div>
-                          </div>
-
-                          <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-md border-2 border-orange-200">
-                            <div className="flex justify-between items-center">
-                              <span className="text-base font-bold text-gray-900">Total Amount:</span>
-                              <span className="text-xl font-bold text-orange-600">
-                                ${calculateTotal().toFixed(2)}
-                              </span>
                             </div>
                           </div>
                         </div>
@@ -505,10 +434,10 @@ const ProductDetail = () => {
                             Back
                           </Button>
                           <Button
-                            onClick={proceedToCheckout}
+                            onClick={handleInquirySubmit}
                             className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-2 text-sm font-semibold rounded-md shadow-md transition-all duration-300"
                           >
-                            Complete Order
+                            Inquire Now
                             <ArrowRight className="w-4 h-4 ml-2" />
                           </Button>
                         </div>
@@ -519,10 +448,83 @@ const ProductDetail = () => {
               </div>
             </div>
           </div>
+
+          {/* Product Information Sections */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+            {/* Product Description */}
+            <Card className="shadow-lg">
+              <Collapsible open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                    <h3 className="text-lg font-semibold text-gray-900">📦 Product Description</h3>
+                    {isDescriptionOpen ? (
+                      <ChevronUp className="w-5 h-5 text-gray-500" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-500" />
+                    )}
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="px-4 pb-4 text-gray-600">
+                    {product.description || "Detailed product description managed from admin panel."}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+
+            {/* Order Process */}
+            <Card className="shadow-lg">
+              <Collapsible open={isProcessOpen} onOpenChange={setIsProcessOpen}>
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                    <h3 className="text-lg font-semibold text-gray-900">🔄 Order Process</h3>
+                    {isProcessOpen ? (
+                      <ChevronUp className="w-5 h-5 text-gray-500" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-500" />
+                    )}
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="px-4 pb-4 text-gray-600">
+                    <div className="text-center font-medium">
+                      Choose Your Custom Product → Fill the Form → Place Inquiry → Production → Shipping
+                    </div>
+                    <div className="mt-3 text-sm space-y-2">
+                      <div>1. Select your product specifications and upload artwork</div>
+                      <div>2. Submit inquiry form with your contact details</div>
+                      <div>3. Our team will contact you with a custom quote</div>
+                      <div>4. Upon approval, we begin production</div>
+                      <div>5. Fast shipping and delivery to your location</div>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          </div>
         </div>
       </div>
+
+      {/* Inquiry Modal */}
+      <InquiryModal
+        isOpen={showInquiryModal}
+        onClose={() => setShowInquiryModal(false)}
+        productData={{
+          productId: id!,
+          productName: product.name,
+          sizeId: selectedSize?.id,
+          sizeName: selectedSize?.size_name,
+          quantity,
+          customWidth: customDimensions?.width,
+          customHeight: customDimensions?.height,
+          artworkFile: artworkFile || undefined,
+          artworkViaEmail
+        }}
+      />
+
       <Footer />
-    </div>;
+    </div>
+  );
 };
 
 export default ProductDetail;
