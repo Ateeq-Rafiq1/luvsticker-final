@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,15 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Package, Mail, Phone, MapPin, Download, Eye } from "lucide-react";
+import { ArrowLeft, Search, Package, Mail, Phone, MapPin, Download, Eye, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import OrderDetailModal from "@/components/admin/OrderDetailModal";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const AdminOrders = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['admin-orders', searchTerm, statusFilter],
@@ -90,6 +94,30 @@ const AdminOrders = () => {
     }
   });
 
+  const deleteOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      toast({
+        title: "Order deleted successfully"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting order",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   const downloadArtwork = async (artworkUrl: string, orderNumber: string) => {
     try {
       const response = await fetch(artworkUrl);
@@ -123,6 +151,7 @@ const AdminOrders = () => {
       case 'in_production': return 'bg-purple-500';
       case 'shipped': return 'bg-green-500';
       case 'delivered': return 'bg-gray-500';
+      case 'inquiry': return 'bg-orange-500';
       default: return 'bg-gray-500';
     }
   };
@@ -134,11 +163,13 @@ const AdminOrders = () => {
       case 'in_production': return 'secondary';
       case 'shipped': return 'default';
       case 'delivered': return 'secondary';
+      case 'inquiry': return 'secondary';
       default: return 'secondary';
     }
   };
 
   const orderStatuses = [
+    { value: 'inquiry', label: 'Inquiry' },
     { value: 'pending', label: 'Pending' },
     { value: 'processing', label: 'Processing' },
     { value: 'in_production', label: 'In Production' },
@@ -150,6 +181,15 @@ const AdminOrders = () => {
     if (trackingNumber.trim()) {
       updateTrackingNumberMutation.mutate({ orderId, trackingNumber: trackingNumber.trim() });
     }
+  };
+
+  const handleViewDetails = (order: any) => {
+    setSelectedOrder(order);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    deleteOrderMutation.mutate(orderId);
   };
 
   return (
@@ -239,9 +279,43 @@ const AdminOrders = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">Order #{order.order_number}</CardTitle>
-                    <Badge variant={getStatusVariant(order.status)}>
-                      {order.status.replace('_', ' ').toUpperCase()}
-                    </Badge>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={getStatusVariant(order.status)}>
+                        {order.status.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDetails(order)}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View Details
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Order</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete order #{order.order_number}? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteOrder(order.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete Order
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -258,27 +332,6 @@ const AdminOrders = () => {
                       </div>
                     </div>
 
-                    {/* Delivery Address */}
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900 flex items-center">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        Delivery Address
-                      </h4>
-                      <div className="space-y-1">
-                        {order.delivery_address ? (
-                          <>
-                            <p className="text-sm">{order.delivery_address}</p>
-                            <p className="text-sm text-gray-600">
-                              {order.delivery_city}, {order.delivery_state} {order.delivery_postal_code}
-                            </p>
-                            <p className="text-sm text-gray-600">{order.delivery_country}</p>
-                          </>
-                        ) : (
-                          <p className="text-sm text-gray-500 italic">No delivery address provided</p>
-                        )}
-                      </div>
-                    </div>
-
                     {/* Product Information */}
                     <div className="space-y-3">
                       <h4 className="font-semibold text-gray-900 flex items-center">
@@ -289,16 +342,8 @@ const AdminOrders = () => {
                         <p className="text-sm font-medium">{order.products?.name}</p>
                         <p className="text-sm text-gray-600">
                           Size: {order.product_sizes?.size_name}
-                          {order.product_sizes?.width && order.product_sizes?.height && 
-                            ` (${order.product_sizes.width}"×${order.product_sizes.height}")`
-                          }
                         </p>
-                        {order.custom_width && order.custom_height && (
-                          <p className="text-sm text-gray-600">
-                            Custom: {order.custom_width}"×{order.custom_height}"
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-600">Qty: {order.quantity}</p>
+                        <p className="text-sm text-gray-600">Qty: {order.quantity?.toLocaleString()}</p>
                       </div>
                     </div>
 
@@ -314,29 +359,6 @@ const AdminOrders = () => {
                                 alt="Order artwork" 
                                 className="w-full h-20 object-cover rounded-lg border bg-gray-50"
                               />
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="absolute top-1 right-1 h-6 w-6 p-0"
-                                  >
-                                    <Eye className="h-3 w-3" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-3xl">
-                                  <DialogHeader>
-                                    <DialogTitle>Artwork Preview - Order #{order.order_number}</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="flex justify-center">
-                                    <img 
-                                      src={order.artwork_url} 
-                                      alt="Order artwork preview" 
-                                      className="max-w-full max-h-96 object-contain rounded-lg"
-                                    />
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
                             </div>
                             <Button
                               variant="outline"
@@ -365,9 +387,6 @@ const AdminOrders = () => {
                         </p>
                         <p className="text-sm">
                           <span className="font-medium">Created:</span> {new Date(order.created_at).toLocaleDateString()}
-                        </p>
-                        <p className="text-sm">
-                          <span className="font-medium">Updated:</span> {new Date(order.updated_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -424,6 +443,14 @@ const AdminOrders = () => {
           </div>
         )}
       </div>
+
+      {/* Order Detail Modal */}
+      <OrderDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        order={selectedOrder}
+        onDownloadArtwork={downloadArtwork}
+      />
     </div>
   );
 };
