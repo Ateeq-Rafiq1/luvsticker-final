@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,16 +18,23 @@ const AdminProducts = () => {
   const { data: products, isLoading } = useQuery({
     queryKey: ['admin-products'],
     queryFn: async () => {
-      const { data } = await supabase
+      console.log('Fetching products...');
+      const { data, error } = await supabase
         .from('products')
         .select(`
           *,
           product_sizes (
-            *,
-            quantity_tiers (*)
+            *
           )
         `)
         .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching products:', error);
+        throw error;
+      }
+      
+      console.log('Products fetched:', data);
       
       // Sort product sizes by display_order
       const productsWithSortedSizes = data?.map(product => ({
@@ -102,6 +110,23 @@ const AdminProducts = () => {
     setEditingProduct(null);
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 rounded mb-4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-gray-300 h-64 rounded-lg"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow">
@@ -128,9 +153,9 @@ const AdminProducts = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!isLoading && products && products.length > 0 && (
+        {products && products.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products?.map((product) => (
+            {products.map((product) => (
               <Card key={product.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -171,16 +196,9 @@ const AdminProducts = () => {
                       <p className="text-sm font-medium mb-2">Available Sizes:</p>
                       <div className="flex flex-wrap gap-1">
                         {product.product_sizes.slice(0, 3).map((size: any) => (
-                          <div key={size.id} className="flex flex-col">
-                            <Badge variant="outline" className="text-xs">
-                              {size.size_name} (${size.price_per_unit})
-                            </Badge>
-                            {size.quantity_tiers && size.quantity_tiers.length > 0 && (
-                              <span className="text-xs text-green-600 mt-1">
-                                {size.quantity_tiers.length} tier{size.quantity_tiers.length > 1 ? 's' : ''}
-                              </span>
-                            )}
-                          </div>
+                          <Badge key={size.id} variant="outline" className="text-xs">
+                            {size.size_name} (${size.price_per_unit})
+                          </Badge>
                         ))}
                         {product.product_sizes.length > 3 && (
                           <Badge variant="outline" className="text-xs">
@@ -216,6 +234,18 @@ const AdminProducts = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+            <p className="text-gray-600 mb-6">Get started by creating your first product.</p>
+            <Button 
+              onClick={() => setShowForm(true)}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Your First Product
+            </Button>
           </div>
         )}
       </div>

@@ -23,8 +23,8 @@ const Navbar = () => {
               </div>
               <div className="flex items-center">
                 <Mail className="w-4 h-4 mr-1" />
-                <a href="mailto:Info@themailerbox.com" className="hover:text-orange-600 transition-colors">
-                  Info@themailerbox.com
+                <a href="mailto:sales@luvstickers.com" className="hover:text-orange-600 transition-colors">
+                  sales@luvstickers.com
                 </a>
               </div>
             </div>
@@ -87,7 +87,7 @@ const Navbar = () => {
             </div>
           </div>
         </div>
-      </nav>
+      </div>
     </div>
   );
 };

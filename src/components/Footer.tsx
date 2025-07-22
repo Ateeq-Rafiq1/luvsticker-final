@@ -27,8 +27,8 @@ const Footer = () => {
               </div>
               <div className="flex items-center">
                 <Mail className="w-4 h-4 mr-3 text-orange-600" />
-                <a href="mailto:Info@themailerbox.com" className="text-gray-600 hover:text-orange-600 transition-colors">
-                  Info@themailerbox.com
+                <a href="mailto:sales@luvstickers.com" className="text-gray-600 hover:text-orange-600 transition-colors">
+                  sales@luvstickers.com
                 </a>
               </div>
             </div>
