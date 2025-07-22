@@ -243,81 +243,60 @@ const ProductDetail = () => {
             </div>
 
             {/* Quantity Selection */}
-            <div className="space-y-4">
-              <div>
-                <Label className="text-lg font-semibold">Quantity</Label>
-                <div className="mt-2">
-                  <Input
-                    type="number"
-                    min="1000"
-                    value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1000)}
-                    className="w-48"
-                  />
-                  <p className="text-sm text-gray-600 mt-1">Minimum order: 1,000 units</p>
-                </div>
+            <div>
+              <Label className="text-lg font-semibold">Quantity</Label>
+              <div className="mt-2">
+                <Input
+                  type="number"
+                  min="1000"
+                  value={quantity}
+                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1000)}
+                  className="w-48"
+                />
+                <p className="text-sm text-gray-600 mt-1">Minimum order: 1,000 units</p>
               </div>
             </div>
 
             {/* Artwork Upload */}
-            <div className="space-y-4">
-              <Label className="text-lg font-semibold">Artwork</Label>
-              <ArtworkUploadSection
-                onFileSelect={setArtworkFile}
-                onEmailToggle={setArtworkViaEmail}
-                artworkViaEmail={artworkViaEmail}
-                selectedFile={artworkFile}
-              />
-            </div>
-
-            {/* Inquiry Button */}
-            <Button 
-              onClick={handleInquirySubmit}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white text-lg py-3"
-              size="lg"
-            >
-              Inquire Now - Get Custom Quote
-            </Button>
+            <ArtworkUploadSection
+              onArtworkChange={setArtworkFile}
+              onEmailOptionChange={setArtworkViaEmail}
+              onNext={handleInquirySubmit}
+              selectedFile={artworkFile}
+              emailOption={artworkViaEmail}
+            />
           </div>
         </div>
 
-        {/* Product Information Sections */}
-        <div className="mt-16 space-y-12">
-          {/* Product Description */}
-          <div className="bg-white rounded-lg shadow-sm p-8">
+        {/* Product Description Section */}
+        {product.description && (
+          <div className="mt-16 bg-white rounded-lg shadow-sm p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Product Description</h2>
             <div className="prose max-w-none text-gray-600">
-              {product.description ? (
-                <p className="text-lg leading-relaxed">{product.description}</p>
-              ) : (
-                <p className="text-lg leading-relaxed">
-                  This high-quality product is perfect for your custom printing needs. 
-                  Contact us for detailed specifications and customization options.
-                </p>
-              )}
+              <p className="text-lg leading-relaxed">{product.description}</p>
             </div>
           </div>
+        )}
 
-          {/* Order Process */}
-          <div className="bg-white rounded-lg shadow-sm p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Order Process</h2>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-              {[
-                { step: "1", title: "Choose Your Custom Product", desc: "Select size, quantity, and specifications" },
-                { step: "2", title: "Fill the Form", desc: "Provide your contact details and requirements" },
-                { step: "3", title: "Place Inquiry", desc: "Submit your request for a custom quote" },
-                { step: "4", title: "Production", desc: "We'll manufacture your custom order" },
-                { step: "5", title: "Shipping", desc: "Fast delivery to your location" }
-              ].map((item, index) => (
-                <div key={index} className="text-center">
-                  <div className="w-12 h-12 bg-orange-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">
-                    {item.step}
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-gray-600">{item.desc}</p>
+        {/* Order Process */}
+        <div className="mt-16 bg-white rounded-lg shadow-sm p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Order Process</h2>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+            {[
+              { step: "1", title: "Choose Your Custom Product", desc: "Select size, quantity, and specifications" },
+              { step: "2", title: "Fill the Form", desc: "Provide your contact details and requirements" },
+              { step: "3", title: "Place Inquiry", desc: "Submit your request for a custom quote" },
+              { step: "4", title: "Production", desc: "We'll manufacture your custom order" },
+              { step: "5", title: "Shipping", desc: "Fast delivery to your location" }
+            ].map((item, index) => (
+              <div key={index} className="text-center">
+                <div className="w-12 h-12 bg-orange-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">
+                  {item.step}
                 </div>
-              ))}
-            </div>
+                <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
+                <p className="text-sm text-gray-600">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
 
