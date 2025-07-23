@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -11,6 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import ArtworkUploadSection from "@/components/ArtworkUploadSection";
 import InquiryModal from "@/components/InquiryModal";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 
 const ProductDetail = () => {
@@ -119,6 +120,7 @@ const ProductDetail = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
+        <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -130,19 +132,24 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h1>
-          <Link to="/products">
-            <Button>Browse Products</Button>
-          </Link>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h1>
+            <Link to="/products">
+              <Button>Browse Products</Button>
+            </Link>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -153,6 +160,7 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
@@ -189,9 +197,6 @@ const ProductDetail = () => {
           <div className="space-y-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
-              {product.description && (
-                <p className="text-gray-600 text-lg leading-relaxed">{product.description}</p>
-              )}
             </div>
 
             {/* Size Selection */}
@@ -338,6 +343,8 @@ const ProductDetail = () => {
           </div>
         )}
       </div>
+
+      <Footer />
 
       {/* Inquiry Modal */}
       <InquiryModal
