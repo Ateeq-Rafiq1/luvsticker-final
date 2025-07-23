@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,7 @@ interface ArtworkUploadSectionProps {
   onNext: () => void;
   selectedFile: File | null;
   emailOption: boolean;
+  buttonText?: string;
 }
 
 const ArtworkUploadSection = ({ 
@@ -20,10 +20,11 @@ const ArtworkUploadSection = ({
   onEmailOptionChange, 
   onNext, 
   selectedFile,
-  emailOption 
+  emailOption,
+  buttonText = "Continue to Review"
 }: ArtworkUploadSectionProps) => {
   const [copied, setCopied] = useState(false);
-  const email = "luvstickers3@gmail.com";
+  const email = "sales@luvstickers.com";
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -127,7 +128,7 @@ const ArtworkUploadSection = ({
         disabled={!canProceed}
         className="w-full bg-orange-600 hover:bg-orange-700"
       >
-        Continue to Review
+        {buttonText}
       </Button>
     </div>
   );
