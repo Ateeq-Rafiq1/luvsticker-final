@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,11 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Plus, Edit, Trash2, DollarSign } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import ProductForm from "@/components/admin/ProductForm";
+import ProductFormModal from "@/components/admin/ProductFormModal";
 
 const AdminProducts = () => {
   const queryClient = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
   const { data: products, isLoading } = useQuery({
@@ -102,12 +101,17 @@ const AdminProducts = () => {
 
   const handleEditProduct = (product: any) => {
     setEditingProduct(product);
-    setShowForm(true);
+    setShowModal(true);
   };
 
-  const handleCloseForm = () => {
-    setShowForm(false);
+  const handleCloseModal = () => {
+    setShowModal(false);
     setEditingProduct(null);
+  };
+
+  const handleAddProduct = () => {
+    setEditingProduct(null);
+    setShowModal(true);
   };
 
   if (isLoading) {
@@ -143,7 +147,7 @@ const AdminProducts = () => {
             </div>
             <Button 
               className="bg-orange-600 hover:bg-orange-700"
-              onClick={() => setShowForm(true)}
+              onClick={handleAddProduct}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Product
@@ -240,7 +244,7 @@ const AdminProducts = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
             <p className="text-gray-600 mb-6">Get started by creating your first product.</p>
             <Button 
-              onClick={() => setShowForm(true)}
+              onClick={handleAddProduct}
               className="bg-orange-600 hover:bg-orange-700"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -250,12 +254,11 @@ const AdminProducts = () => {
         )}
       </div>
 
-      {showForm && (
-        <ProductForm 
-          onClose={handleCloseForm}
-          product={editingProduct}
-        />
-      )}
+      <ProductFormModal 
+        isOpen={showModal}
+        onClose={handleCloseModal}
+        product={editingProduct}
+      />
     </div>
   );
 };

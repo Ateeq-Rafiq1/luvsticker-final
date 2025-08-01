@@ -1,11 +1,10 @@
 
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import HeroSection from "@/components/HeroSection";
-import ProductShowcase from "@/components/ProductShowcase";
-import VideoSection from "@/components/VideoSection";
-import TestimonialsSection from "@/components/TestimonialsSection";
-import CTASection from "@/components/CTASection";
+import { HeroSection } from "@/components/HeroSection";
+import { ProductShowcase } from "@/components/ProductShowcase";
+import { TestimonialsSection } from "@/components/TestimonialsSection";
+import { CTASection } from "@/components/CTASection";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   return (
@@ -13,7 +12,6 @@ const Index = () => {
       <Navbar />
       <HeroSection />
       <ProductShowcase />
-      <VideoSection />
       <TestimonialsSection />
       <CTASection />
       <Footer />

@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { X, Plus, Upload } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface ProductSize {
   id?: string;
@@ -29,7 +30,6 @@ interface ProductImage {
   image_type: 'feature' | 'gallery';
   display_order: number;
   tempId?: string;
-  file?: File;
 }
 
 interface ProductFormProps {
@@ -118,32 +118,12 @@ const ProductForm = ({ product, onClose }: ProductFormProps) => {
     setImages(updatedImages);
   };
 
-  const handleImageUpload = async (index: number, file: File) => {
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('products')
-        .upload(fileName, file);
+  const handleFeatureImageUpload = (url: string) => {
+    setFeatureImageUrl(url);
+  };
 
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage.from('products').getPublicUrl(fileName);
-      
-      updateImage(index, 'image_url', data.publicUrl);
-      updateImage(index, 'file', undefined);
-      
-      toast({
-        title: "Image uploaded successfully"
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: "Error uploading image",
-        variant: "destructive"
-      });
-    }
+  const handleGalleryImageUpload = (index: number, url: string) => {
+    updateImage(index, 'image_url', url);
   };
 
   const saveProductMutation = useMutation({
@@ -202,7 +182,7 @@ const ProductForm = ({ product, onClose }: ProductFormProps) => {
 
         // Handle images similarly
         const existingImages = images.filter(img => img.id);
-        const newImages = images.filter(img => !img.id);
+        const newImages = images.filter(img => !img.id && img.image_url);
 
         // Update existing images
         for (const image of existingImages) {
@@ -268,10 +248,11 @@ const ProductForm = ({ product, onClose }: ProductFormProps) => {
         }
 
         // Insert images
-        if (images.length > 0) {
+        const validImages = images.filter(img => img.image_url);
+        if (validImages.length > 0) {
           const { error } = await supabase
             .from('product_images')
-            .insert(images.map(img => ({
+            .insert(validImages.map(img => ({
               product_id: newProduct.id,
               image_url: img.image_url,
               alt_text: img.alt_text,
@@ -348,243 +329,231 @@ const ProductForm = ({ product, onClose }: ProductFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mx-auto">
-      {/* Basic Product Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="name">Product Name *</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter product name"
-              required
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="description">Product Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter detailed product description"
-              rows={4}
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="feature-image">Feature Image URL</Label>
-            <Input
-              id="feature-image"
-              value={featureImageUrl}
-              onChange={(e) => setFeatureImageUrl(e.target.value)}
-              placeholder="Enter feature image URL"
-            />
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="is-active"
-              checked={isActive}
-              onCheckedChange={setIsActive}
-            />
-            <Label htmlFor="is-active">Product is active</Label>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Product Sizes */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Product Sizes</CardTitle>
-            <Button type="button" onClick={addSize} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Size
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {sizes.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No sizes added yet</p>
-          ) : (
-            <div className="space-y-4">
-              {sizes.map((size, index) => (
-                <div key={size.tempId || size.id} className="border p-4 rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium">Size {index + 1}</h4>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeSize(index)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <Label>Size Name *</Label>
-                      <Input
-                        value={size.size_name}
-                        onChange={(e) => updateSize(index, 'size_name', e.target.value)}
-                        placeholder="e.g., Small, Large"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Width (inches)</Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={size.width || ''}
-                        onChange={(e) => updateSize(index, 'width', parseFloat(e.target.value) || null)}
-                        placeholder="Width"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Height (inches)</Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={size.height || ''}
-                        onChange={(e) => updateSize(index, 'height', parseFloat(e.target.value) || null)}
-                        placeholder="Height"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Price per Unit *</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={size.price_per_unit}
-                        onChange={(e) => updateSize(index, 'price_per_unit', parseFloat(e.target.value) || 0)}
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 flex items-center space-x-2">
-                    <Switch
-                      checked={size.is_custom}
-                      onCheckedChange={(checked) => updateSize(index, 'is_custom', checked)}
-                    />
-                    <Label>Allow custom dimensions</Label>
-                  </div>
-                </div>
-              ))}
+    <div className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Product Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Product Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="name">Product Name *</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter product name"
+                required
+              />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            
+            <div>
+              <Label htmlFor="description">Product Description</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter detailed product description"
+                rows={4}
+              />
+            </div>
+            
+            <ImageUpload
+              bucket="products"
+              path="feature-images"
+              onImageUploaded={handleFeatureImageUpload}
+              onImageRemoved={() => setFeatureImageUrl("")}
+              currentImage={featureImageUrl}
+              label="Feature Image"
+              className="w-full"
+            />
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is-active"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
+              <Label htmlFor="is-active">Product is active</Label>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Product Images */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Product Images</CardTitle>
-            <Button type="button" onClick={addImage} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Image
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {images.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No images added yet</p>
-          ) : (
-            <div className="space-y-4">
-              {images.map((image, index) => (
-                <div key={image.tempId || image.id} className="border p-4 rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium">Image {index + 1}</h4>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeImage(index)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label>Image URL</Label>
-                      <Input
-                        value={image.image_url}
-                        onChange={(e) => updateImage(index, 'image_url', e.target.value)}
-                        placeholder="Enter image URL"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Alt Text</Label>
-                      <Input
-                        value={image.alt_text}
-                        onChange={(e) => updateImage(index, 'alt_text', e.target.value)}
-                        placeholder="Image description"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Image Type</Label>
-                      <select
-                        value={image.image_type}
-                        onChange={(e) => updateImage(index, 'image_type', e.target.value)}
-                        className="w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-md"
+        {/* Product Sizes */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Product Sizes</CardTitle>
+              <Button type="button" onClick={addSize} variant="outline" size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Size
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {sizes.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">No sizes added yet</p>
+            ) : (
+              <div className="space-y-4">
+                {sizes.map((size, index) => (
+                  <div key={size.tempId || size.id} className="border p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium">Size {index + 1}</h4>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeSize(index)}
                       >
-                        <option value="gallery">Gallery</option>
-                        <option value="feature">Feature</option>
-                      </select>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <Label>Size Name *</Label>
+                        <Input
+                          value={size.size_name}
+                          onChange={(e) => updateSize(index, 'size_name', e.target.value)}
+                          placeholder="e.g., Small, Large"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Width (inches)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={size.width || ''}
+                          onChange={(e) => updateSize(index, 'width', parseFloat(e.target.value) || null)}
+                          placeholder="Width"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Height (inches)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={size.height || ''}
+                          onChange={(e) => updateSize(index, 'height', parseFloat(e.target.value) || null)}
+                          placeholder="Height"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Price per Unit *</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={size.price_per_unit}
+                          onChange={(e) => updateSize(index, 'price_per_unit', parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 flex items-center space-x-2">
+                      <Switch
+                        checked={size.is_custom}
+                        onCheckedChange={(checked) => updateSize(index, 'is_custom', checked)}
+                      />
+                      <Label>Allow custom dimensions</Label>
                     </div>
                   </div>
-                  
-                  <div className="mt-4">
-                    <Label>Upload Image File</Label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          updateImage(index, 'file', file);
-                          handleImageUpload(index, file);
-                        }
-                      }}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Form Actions */}
-      <div className="flex justify-end space-x-4">
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button 
-          type="submit" 
-          disabled={saveProductMutation.isPending}
-          className="bg-orange-600 hover:bg-orange-700"
-        >
-          {saveProductMutation.isPending ? "Saving..." : (product?.id ? "Update Product" : "Create Product")}
-        </Button>
-      </div>
-    </form>
+        {/* Product Images */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Gallery Images</CardTitle>
+              <Button type="button" onClick={addImage} variant="outline" size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Image
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {images.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">No gallery images added yet</p>
+            ) : (
+              <div className="space-y-4">
+                {images.map((image, index) => (
+                  <div key={image.tempId || image.id} className="border p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium">Gallery Image {index + 1}</h4>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeImage(index)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <ImageUpload
+                        bucket="products"
+                        path="gallery-images"
+                        onImageUploaded={(url) => handleGalleryImageUpload(index, url)}
+                        onImageRemoved={() => updateImage(index, 'image_url', '')}
+                        currentImage={image.image_url}
+                        label="Gallery Image"
+                      />
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Alt Text</Label>
+                          <Input
+                            value={image.alt_text}
+                            onChange={(e) => updateImage(index, 'alt_text', e.target.value)}
+                            placeholder="Image description"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label>Image Type</Label>
+                          <select
+                            value={image.image_type}
+                            onChange={(e) => updateImage(index, 'image_type', e.target.value)}
+                            className="w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-md"
+                          >
+                            <option value="gallery">Gallery</option>
+                            <option value="feature">Feature</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Form Actions */}
+        <div className="flex justify-end space-x-4">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={saveProductMutation.isPending}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            {saveProductMutation.isPending ? "Saving..." : (product?.id ? "Update Product" : "Create Product")}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 };
 
