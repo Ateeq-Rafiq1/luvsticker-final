@@ -87,6 +87,24 @@ const Index = () => {
               </div>
             </Link>
           </div>
+
+          {/* Additional Internal Links */}
+          <div className="mt-12 text-center">
+            <p className="text-gray-600 mb-6">
+              Looking for more information? Check out our comprehensive resources:
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link to="/returns" className="text-orange-600 hover:text-orange-700 underline">
+                Returns & Refunds Policy
+              </Link>
+              <Link to="/track-order" className="text-orange-600 hover:text-orange-700 underline">
+                Track Your Order
+              </Link>
+              <Link to="/blog" className="text-orange-600 hover:text-orange-700 underline">
+                Design Tips & Tutorials
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
       
