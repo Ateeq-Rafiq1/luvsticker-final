@@ -7,6 +7,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import SEOHead from "@/components/SEOHead";
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 
 const FAQ = () => {
   const faqs = [
@@ -44,8 +47,29 @@ const FAQ = () => {
     }
   ];
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="FAQ - Custom Sticker Questions Answered"
+        description="Find answers to common questions about our custom sticker products and services. Get help with materials, shipping, file formats, and more."
+        canonicalUrl="https://luvstickers.com/faq"
+        keywords="sticker FAQ, custom sticker questions, vinyl sticker help, sticker materials, shipping questions"
+        schema={faqSchema}
+      />
+      
       <Navbar />
       <div className="flex-1 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -57,6 +81,25 @@ const FAQ = () => {
               Find answers to common questions about our products and services
             </p>
           </div>
+
+          {/* FAQ Categories */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-center mb-8">Quick Navigation</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                <h3 className="font-semibold text-orange-600">Product Questions</h3>
+                <p className="text-sm text-gray-600 mt-1">Materials, sizes, customization</p>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                <h3 className="font-semibold text-orange-600">Order & Shipping</h3>
+                <p className="text-sm text-gray-600 mt-1">Processing, delivery, tracking</p>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                <h3 className="font-semibold text-orange-600">Support & Returns</h3>
+                <p className="text-sm text-gray-600 mt-1">Policies, guarantees, help</p>
+              </div>
+            </div>
+          </section>
 
           <Accordion type="single" collapsible className="space-y-4">
             {faqs.map((faq, index) => (
@@ -75,17 +118,35 @@ const FAQ = () => {
             ))}
           </Accordion>
 
-          <div className="mt-12 text-center">
-            <p className="text-gray-600 mb-4">
-              Still have questions? We're here to help!
-            </p>
-            <a
-              href="/contact"
-              className="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors"
-            >
-              Contact Us
-            </a>
-          </div>
+          {/* Related Links Section */}
+          <section className="mt-16">
+            <h2 className="text-2xl font-bold text-center mb-8">Still Need Help?</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Link to="/contact" className="group bg-white rounded-lg p-6 text-center hover:shadow-lg transition-all duration-300 hover:bg-orange-50">
+                <h3 className="text-lg font-semibold mb-2 group-hover:text-orange-600">Contact Us</h3>
+                <p className="text-gray-600 text-sm mb-4">Get personalized help from our support team</p>
+                <div className="flex items-center justify-center text-orange-600 font-medium">
+                  Contact Support <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+              
+              <Link to="/products" className="group bg-white rounded-lg p-6 text-center hover:shadow-lg transition-all duration-300 hover:bg-orange-50">
+                <h3 className="text-lg font-semibold mb-2 group-hover:text-orange-600">Browse Products</h3>
+                <p className="text-gray-600 text-sm mb-4">Explore our full range of custom stickers</p>
+                <div className="flex items-center justify-center text-orange-600 font-medium">
+                  View Products <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+              
+              <Link to="/returns" className="group bg-white rounded-lg p-6 text-center hover:shadow-lg transition-all duration-300 hover:bg-orange-50">
+                <h3 className="text-lg font-semibold mb-2 group-hover:text-orange-600">Return Policy</h3>
+                <p className="text-gray-600 text-sm mb-4">Learn about our satisfaction guarantee</p>
+                <div className="flex items-center justify-center text-orange-600 font-medium">
+                  View Policy <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            </div>
+          </section>
         </div>
       </div>
       <Footer />
