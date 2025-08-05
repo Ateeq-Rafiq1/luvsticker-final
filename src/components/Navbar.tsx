@@ -1,17 +1,9 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Phone, Mail } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 const Navbar = () => {
-  return (
-    <div>
+  return <div>
       {/* Top contact bar */}
       <div className="bg-gray-100 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -67,10 +59,10 @@ const Navbar = () => {
                     <Link to="/contact">Contact Us</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/returns">Returns</Link>
+                    
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/track-order">Track Order</Link>
+                    
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -88,8 +80,6 @@ const Navbar = () => {
           </div>
         </div>
       </nav>
-    </div>
-  );
+    </div>;
 };
-
 export default Navbar;
