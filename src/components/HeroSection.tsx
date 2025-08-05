@@ -22,7 +22,7 @@ const Hero = () => {
             </h1>
             
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight text-white">
-              Turn Your Designs Into Amazing Custom Stickers
+              Custom Stickers Designed for Your Branding Needs
             </h2>
             
             <p className="text-lg text-white/90 max-w-lg">
@@ -31,7 +31,7 @@ const Hero = () => {
             
             <div className="flex flex-wrap gap-4 pt-4">
               <Link to="/products" className="bg-white text-istickers-orange font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-all shadow-md inline-flex items-center gap-2">
-                Browse Designs
+                Browse Stickers
                 <ArrowRight size={18} />
               </Link>
             </div>
