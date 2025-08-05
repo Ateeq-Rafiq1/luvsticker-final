@@ -1,10 +1,7 @@
-
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin } from 'lucide-react';
-
 const Footer = () => {
-  return (
-    <footer className="bg-gray-100 text-gray-800 pt-16 pb-8">
+  return <footer className="bg-gray-100 text-gray-800 pt-16 pb-8">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
           {/* Company Info */}
@@ -41,7 +38,7 @@ const Footer = () => {
               <li><Link to="/faq" className="text-gray-600 hover:text-orange-600 transition-colors">FAQ</Link></li>
               <li><Link to="/contact" className="text-gray-600 hover:text-orange-600 transition-colors">Contact Us</Link></li>
               <li><Link to="/returns" className="text-gray-600 hover:text-orange-600 transition-colors">Returns</Link></li>
-              <li><Link to="/track-order" className="text-gray-600 hover:text-orange-600 transition-colors">Order Tracking</Link></li>
+              
             </ul>
           </div>
 
@@ -66,8 +63,6 @@ const Footer = () => {
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
