@@ -14,36 +14,44 @@ import { ArrowRight } from "lucide-react";
 const FAQ = () => {
   const faqs = [
     {
-      question: "What materials do you use for your stickers?",
-      answer: "We use high-quality vinyl materials that are waterproof, fade-resistant, and designed to last for years both indoors and outdoors."
+      question: "What types of stickers do you offer?",
+      answer: "At Luvstickers, we provide a variety of sticker types! You can choose from front adhesive stickers, holographic stickers, cut-to-shape stickers, square stickers, rectangle stickers, circle stickers, and die-cut stickers. Each type is designed for different uses, whether for branding, packaging, or just for fun!"
+    },
+    {
+      question: "How do I order stickers from your website?",
+      answer: "Ordering stickers from Luvstickers is super easy! Just browse our catalog, pick the type of sticker you want, and customize it with your design. Once you're happy, simply follow the checkout process to place your order. If you need any help, feel free to call us!"
+    },
+    {
+      question: "Are your stickers waterproof?",
+      answer: "Yes! Many of our stickers are made from durable vinyl, which makes them waterproof and weatherproof. This means you can use them indoors or outdoors without worrying about them getting damaged by water!"
+    },
+    {
+      question: "Can I use my own design for the stickers?",
+      answer: "Absolutely! We love it when customers bring their own designs. You can upload your artwork during the order process, and we'll make sure your custom stickers come out just as you imagined!"
+    },
+    {
+      question: "What can I use stickers for?",
+      answer: "Stickers can be used for a variety of purposes! You can use them for branding your business, personal projects, labeling items, decorating your laptop, or even just for fun at parties. The possibilities are endless!"
+    },
+    {
+      question: "How do I make sure my design looks good on stickers?",
+      answer: "To ensure your design looks great on stickers, you should use high-resolution images and make sure your colors are vibrant. Our design guidelines on the website can help you create the best possible artwork. If you're unsure, don't hesitate to ask for advice!"
+    },
+    {
+      question: "What if I have a question about my order?",
+      answer: "If you have any questions regarding your order, you can easily contact our customer service. You can call us at +1 801-783-4566 or email us, and we'll be happy to assist you with any concerns you have!"
     },
     {
       question: "How long does shipping take?",
-      answer: "Standard shipping takes 3-5 business days within the US. Express shipping (1-2 business days) is also available for an additional fee."
+      answer: "Shipping times can vary depending on where you are. Typically, once your order is completed, it will be shipped out quickly. You will receive a tracking number so you can keep an eye on your package as it makes its way to you!"
     },
     {
-      question: "Can I get a custom size for my stickers?",
-      answer: "Yes! We offer custom sizing for all our products. Simply select the custom size option when placing your order and specify your dimensions."
+      question: "Do you offer refunds or exchanges?",
+      answer: "Yes, we strive for customer satisfaction! If there is an issue with your order, such as a printing error or if the stickers were damaged during shipping, please reach out to us, and we will work to resolve it through refunds or exchanges!"
     },
     {
-      question: "What file formats do you accept for artwork?",
-      answer: "We accept PNG, JPG, PDF, and SVG files. For best quality, we recommend high-resolution images (300 DPI or higher)."
-    },
-    {
-      question: "Do you offer bulk discounts?",
-      answer: "Yes, we offer quantity discounts starting at 50+ pieces. The more you order, the more you save!"
-    },
-    {
-      question: "Are your stickers removable?",
-      answer: "Our standard stickers are permanent, but we also offer removable options. Please specify if you need removable stickers when ordering."
-    },
-    {
-      question: "Can I see a proof before my order is printed?",
-      answer: "Yes, we provide digital proofs for all custom orders. You'll receive an email with your proof within 24 hours of placing your order."
-    },
-    {
-      question: "What's your return policy?",
-      answer: "We offer a 100% satisfaction guarantee. If you're not happy with your order, contact us within 30 days for a full refund or reprint."
+      question: "Can I order stickers in bulk?",
+      answer: "Yes! We offer bulk ordering options for customers who need a large quantity of stickers. This is great for businesses or events where you need a lot of stickers. Just contact us for a quote!"
     }
   ];
 
