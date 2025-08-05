@@ -72,9 +72,9 @@ const FAQ = () => {
     <div className="min-h-screen flex flex-col">
       <SEOHead
         title="FAQ - Custom Sticker Questions Answered"
-        description="Find answers to common questions about our custom sticker products and services. Get help with materials, shipping, file formats, and more."
+        description="Create custom stickers with Luvstickers! Explore our range of front adhesive, holographic, and die cut styles for unique branding solutions"
         canonicalUrl="https://luvstickers.com/faq"
-        keywords="sticker FAQ, custom sticker questions, vinyl sticker help, sticker materials, shipping questions"
+        keywords="custom stickers, sticker design, front adhesive stickers, holographic stickers, cut to shape stickers, square stickers, rectangle stickers, die cut stickers"
         schema={faqSchema}
       />
       

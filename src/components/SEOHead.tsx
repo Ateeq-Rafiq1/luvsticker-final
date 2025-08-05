@@ -22,6 +22,11 @@ const SEOHead = ({
 }: SEOHeadProps) => {
   const fullTitle = title.includes("Luvstickers") ? title : `${title} | Luvstickers`;
   const currentUrl = canonicalUrl || window.location.href;
+  
+  // Update OG title for homepage
+  const ogTitle = title.includes("Custom Sticker Design and Printing") 
+    ? "Luvstickers | Custom Stickers Designed for Your Branding Needs"
+    : fullTitle;
 
   return (
     <Helmet>
@@ -30,6 +35,7 @@ const SEOHead = ({
       <meta name="description" content={description} />
       {keywords && <meta name="keywords" content={keywords} />}
       <meta name="author" content="Luvstickers" />
+      <meta name="robots" content="index, follow" />
       
       {/* Canonical URL */}
       <link rel="canonical" href={currentUrl} />
@@ -39,7 +45,7 @@ const SEOHead = ({
       <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
       
       {/* Open Graph Tags */}
-      <meta property="og:title" content={fullTitle} />
+      <meta property="og:title" content={ogTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content={ogType} />
       <meta property="og:url" content={currentUrl} />
